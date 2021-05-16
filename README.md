@@ -2,7 +2,7 @@
 
 Python function to stream unzip all the files in a ZIP archive, without loading the entire ZIP file into memory or any of its uncompressed files.
 
-While the ZIP format does have its main directory at the end, each compressed file in the archive is prefixed with a header that contains its name, compressed, and uncompressed size: this is what makes streaming decompression of ZIP files possible.
+While the ZIP format does have its main directory at the end, each compressed file in the archive is prefixed with a header that contains its name, compressed size, and uncompressed size: this is what makes streaming decompression of ZIP files possible.
 
 
 ## Installation
