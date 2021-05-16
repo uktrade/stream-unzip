@@ -11,11 +11,11 @@ from stream_unzip import stream_unzip
 import httpx
 
 def zipped_chunks():
-	# Any iterable that yields a zip file
+    # Any iterable that yields a zip file
     with httpx.stream('GET', 'https://www.example.com/my.zip') as r:
         yield from r.iter_bytes()
 
 for file_name, metadata, unzipped_chunks in stream_unzip(zipped_chunks()):
-	for chunk in unzipped_chunks:
-		print(chunk)
+    for chunk in unzipped_chunks:
+        print(chunk)
 ```
