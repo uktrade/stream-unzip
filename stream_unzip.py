@@ -1,7 +1,7 @@
 from struct import Struct
 import zlib
 
-def stream_unzip(zipfile_chunks):
+def stream_unzip(zipfile_chunks, chunk_size=65536):
     local_file_header_signature = b'\x50\x4b\x03\x04'
     local_file_header_struct = Struct('<HHHHHIIIHH')
     zip64_compressed_size = 4294967295
@@ -97,9 +97,14 @@ def stream_unzip(zipfile_chunks):
             dobj = zlib.decompressobj(wbits=-zlib.MAX_WBITS)
 
             for compressed_chunk in original:
-                uncompressed_chunk = dobj.decompress(compressed_chunk)
+                uncompressed_chunk = dobj.decompress(compressed_chunk, max_length=chunk_size)
                 if uncompressed_chunk:
                     yield uncompressed_chunk
+
+                while dobj.unconsumed_tail:
+                    uncompressed_chunk = dobj.decompress(dobj.unconsumed_tail, max_length=chunk_size)
+                    if uncompressed_chunk:
+                        yield uncompressed_chunk
 
             uncompressed_chunk = dobj.flush()
             if uncompressed_chunk:
