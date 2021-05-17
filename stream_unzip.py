@@ -8,7 +8,7 @@ def stream_unzip(zipfile_chunks, chunk_size=65536):
     zip64_size_signature = b'\x01\x00'
 
     # Maximum size for any untrusted fields to avoid using too much memory
-    max_size = 66560
+    max_size = 65536
 
     def get_byte_readers(iterable):
         # Return functions to return a specific number of bytes from the iterable
@@ -47,15 +47,32 @@ def stream_unzip(zipfile_chunks, chunk_size=65536):
             return b''.join(chunk for chunk in _read_multiple_chunks(amt))
 
         def _read_remaining():
+            nonlocal chunk
+            nonlocal offset
+
+            # We might break in the middle of iterating over _read_remaining,
+            # which is _during_ the yield, so we have to leave the state
+            # right for next time
+            prev_offset = offset
+            prev_chunk = chunk
+            offset = 0
+            chunk = b''
+            if prev_chunk:
+                yield prev_chunk[prev_offset:]
+
             while True:
                 try:
                     yield next(it)
                 except StopIteration:
                     break
 
-        return _read_multiple_chunks, _read_single_chunk, _read_remaining
+        def _return_unused(unused):
+            nonlocal chunk
+            chunk += unused
 
-    read_multiple_chunks, read_single_chunk, read_remainig = get_byte_readers(zipfile_chunks)
+        return _read_multiple_chunks, _read_single_chunk, _read_remaining, _return_unused
+
+    read_multiple_chunks, read_single_chunk, read_remaining, return_unused = get_byte_readers(zipfile_chunks)
 
     def parse_extra(extra):
         extra_offset = 0
@@ -76,6 +93,12 @@ def stream_unzip(zipfile_chunks, chunk_size=65536):
         version, flags, compression, mod_time, mod_date, crc_32, compressed_size, uncompressed_size, file_name_len, extra_field_len = \
             local_file_header_struct.unpack(read_single_chunk(local_file_header_struct.size))
 
+        if compression not in [0, 8]:
+            raise ValueError(f'Unsupported compression type {compression}')
+
+        if flags not in [b'\x00\x00', b'\x08\x00']:
+            raise ValueError(f'Unsupported flags {flags}')
+
         if file_name_len > max_size:
             raise ValueError(f'File name is too long: {file_name_len}')
 
@@ -85,42 +108,46 @@ def stream_unzip(zipfile_chunks, chunk_size=65536):
         file_name = read_single_chunk(file_name_len)
         extra = parse_extra(read_single_chunk(extra_field_len))
 
-        # Has its data descriptor after the file data
-        if flags[0] >> 3 & 1:
-            raise ValueError(f'Streaming not supported by {file_name}: sizes are stored after the file data')
-
-        if flags not in [b'\x00\x00']:
-            raise ValueError(f'Unsupported flags {flags}')
-
         if compressed_size == zip64_compressed_size:
             uncompressed_size, compressed_size = Struct('<QQ').unpack(extra[zip64_size_signature])
-
-        original = read_multiple_chunks(compressed_size)
 
         def _decompress_deflate():
             dobj = zlib.decompressobj(wbits=-zlib.MAX_WBITS)
 
-            for compressed_chunk in original:
+            for compressed_chunk in read_remaining():
                 uncompressed_chunk = dobj.decompress(compressed_chunk, max_length=chunk_size)
                 if uncompressed_chunk:
                     yield uncompressed_chunk
 
-                while dobj.unconsumed_tail:
+                while dobj.unconsumed_tail and not dobj.eof:
                     uncompressed_chunk = dobj.decompress(dobj.unconsumed_tail, max_length=chunk_size)
                     if uncompressed_chunk:
                         yield uncompressed_chunk
+
+                if dobj.eof:
+                    break
 
             uncompressed_chunk = dobj.flush()
             if uncompressed_chunk:
                 yield uncompressed_chunk
 
-        uncompressed_bytes = \
-            original if compression == 0 else \
-            _decompress_deflate() if compression == 8 else \
-            None
+            if dobj.unused_data:
+                return_unused(dobj.unused_data)
 
-        if uncompressed_bytes is None:
-            raise ValueError(f'Unsupported compression type {compression}')
+            # Read the data descriptor
+            if flags == b'\x08\x00':
+                optional_signature = read_single_chunk(4)
+                if optional_signature == b'PK\x07\x08':
+                    read_single_chunk(12)
+                else:
+                    read_single_chunk(8)
+
+        uncompressed_bytes = \
+            read_multiple_chunks(compressed_size) if compression == 0 else \
+            _decompress_deflate()
+
+        if uncompressed_size == 0:
+            uncompressed_size = None
 
         return file_name, uncompressed_size, uncompressed_bytes
 
@@ -130,6 +157,6 @@ def stream_unzip(zipfile_chunks, chunk_size=65536):
             yield yield_file()
         else:
             # We must have reached the central directory record
-            for _ in read_remainig():
+            for _ in read_remaining():
                 pass
             break

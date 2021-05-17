@@ -104,5 +104,23 @@ class TestStreamUnzip(unittest.TestCase):
             with open('fixtures/macos_10_14_5_single_file.zip', 'rb') as f:
                 yield f.read()
 
-        with self.assertRaisesRegex(ValueError, "Streaming not supported by b'contents.txt': sizes are stored after the file data"):
-            next(stream_unzip(yield_input()))
+        num_received_bytes = 0
+        files = [(name, size, b''.join(chunks)) for name, size, chunks in stream_unzip(yield_input())]
+
+        self.assertEqual(len(files), 3)
+        self.assertEqual(files[0], (b'contents.txt', None, b'Contents of the zip'))
+
+    def test_macos_multiple_files(self):
+        def yield_input():
+            with open('fixtures/macos_10_14_5_multiple_files.zip', 'rb') as f:
+                yield f.read()
+
+        num_received_bytes = 0
+        files = [(name, size, b''.join(chunks)) for name, size, chunks in stream_unzip(yield_input())]
+
+        self.assertEqual(len(files), 5)
+        self.assertEqual(files[0], (b'first.txt', None, b'Contents of the first file'))
+        self.assertEqual(files[1][0], b'__MACOSX/')
+        self.assertEqual(files[2][0], b'__MACOSX/._first.txt')
+        self.assertEqual(files[3], (b'second.txt', None, b'Contents of the second file'))
+        self.assertEqual(files[4][0], b'__MACOSX/._second.txt')

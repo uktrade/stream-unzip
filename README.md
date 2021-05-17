@@ -2,9 +2,7 @@
 
 Python function to stream unzip all the files in a ZIP archive, without loading the entire ZIP file into memory or any of its uncompressed files.
 
-While the ZIP format does have its main directory at the end, each compressed file in the archive can be prefixed with a header that contains its name, compressed size, and uncompressed size: this is what makes streaming decompression of ZIP files possible.
-
-Unfortunately not all ZIP files have this: some have their compressed and uncompressed sizes _after_ the file data in the stream. In this case a `ValueError` will be raised.
+While the ZIP format does have its main directory at the end, each compressed file in the archive is prefixed with a header that contains its name. Also, the Deflate algorithm that most ZIP files use indicates when it has reached the end of the stream of a member file. These facts make the streaming decompression of ZIP archives possible.
 
 
 ## Installation
@@ -16,7 +14,7 @@ pip install stream-unzip
 
 ## Usage
 
-A single function is exposed, `stream_unzip`, that takes a single argument: an iterable that should yield the bytes of a ZIP file. It returns an iterable, where each yielded item is a tuple of the file name, file size, and another iterable itself yielding the unzipped bytes of that file.
+A single function is exposed, `stream_unzip`, that takes a single argument: an iterable that should yield the bytes of a ZIP file. It returns an iterable, where each yielded item is a tuple of the file name, file size [`None` if this is not known], and another iterable itself yielding the unzipped bytes of that file.
 
 ```python
 from stream_unzip import stream_unzip
