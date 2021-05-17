@@ -3,7 +3,7 @@ import zlib
 
 def stream_unzip(zipfile_chunks, chunk_size=65536):
     local_file_header_signature = b'\x50\x4b\x03\x04'
-    local_file_header_struct = Struct('<HHHHHIIIHH')
+    local_file_header_struct = Struct('<H2sHHHIIIHH')
     zip64_compressed_size = 4294967295
     zip64_size_signature = b'\x01\x00'
 
@@ -76,9 +76,6 @@ def stream_unzip(zipfile_chunks, chunk_size=65536):
         version, flags, compression, mod_time, mod_date, crc_32, compressed_size, uncompressed_size, file_name_len, extra_field_len = \
             local_file_header_struct.unpack(read_single_chunk(local_file_header_struct.size))
 
-        if flags != 0:
-            raise ValueError(f'Unsupported flags {flags}')
-
         if file_name_len > max_size:
             raise ValueError(f'File name is too long: {file_name_len}')
 
@@ -87,6 +84,13 @@ def stream_unzip(zipfile_chunks, chunk_size=65536):
 
         file_name = read_single_chunk(file_name_len)
         extra = parse_extra(read_single_chunk(extra_field_len))
+
+        # Has its data descriptor after the file data
+        if flags[0] >> 3 & 1:
+            raise ValueError(f'Streaming not supported by {file_name}: sizes are stored after the file data')
+
+        if flags not in [b'\x00\x00']:
+            raise ValueError(f'Unsupported flags {flags}')
 
         if compressed_size == zip64_compressed_size:
             uncompressed_size, compressed_size = Struct('<QQ').unpack(extra[zip64_size_signature])

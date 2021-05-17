@@ -6,7 +6,7 @@ import zipfile
 from stream_unzip import stream_unzip
 
 
-class TestIterableSubprocess(unittest.TestCase):
+class TestStreamUnzip(unittest.TestCase):
 
     def test_large_chunk_multiple_methods(self):
         methods = [zipfile.ZIP_DEFLATED, zipfile.ZIP_STORED]
@@ -98,3 +98,11 @@ class TestIterableSubprocess(unittest.TestCase):
 
         self.assertEqual(size, 5000000000)
         self.assertEqual(num_received_bytes, 5000000000)
+
+    def test_macos_single_file(self):
+        def yield_input():
+            with open('fixtures/macos_10_14_5_single_file.zip', 'rb') as f:
+                yield f.read()
+
+        with self.assertRaisesRegex(ValueError, "Streaming not supported by b'contents.txt': sizes are stored after the file data"):
+            next(stream_unzip(yield_input()))
