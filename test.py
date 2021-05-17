@@ -81,3 +81,20 @@ class TestIterableSubprocess(unittest.TestCase):
                 num_steps += 1
             prev_i = i
         self.assertGreater(num_steps, 1000)
+
+    def test_python_large(self):
+        def yield_input():
+            with open('fixtures/python38_zip64.zip', 'rb') as f:
+                while True:
+                    chunk = f.read(65536)
+                    if not chunk:
+                        break
+                    yield chunk
+
+        num_received_bytes = 0
+        for name, size, chunks in stream_unzip(yield_input()):
+            for chunk in chunks:
+                num_received_bytes += len(chunk)
+
+        self.assertEqual(size, 5000000000)
+        self.assertEqual(num_received_bytes, 5000000000)
