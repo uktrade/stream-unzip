@@ -66,11 +66,6 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Install funzip
-          command: |
-            apt-get update
-            apt-get install unzip
-      - run:
           name: Run tests
           command: |
             python -m unittest

@@ -27,6 +27,7 @@ def stream_unzip(zipfile_chunks, chunk_size=65536):
                 yield chunk[offset:offset + to_yield]
                 amt -= to_yield
                 offset += to_yield % len(chunk)
+                chunk = chunk if offset else b''
 
             # Yield the rest as it comes in
             while amt:
@@ -56,6 +57,7 @@ def stream_unzip(zipfile_chunks, chunk_size=65536):
             chunk = b''
             if prev_chunk:
                 yield prev_chunk[prev_offset:]
+            prev_chunk = b''
 
             while True:
                 try:

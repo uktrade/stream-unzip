@@ -32,7 +32,7 @@ class TestStreamUnzip(unittest.TestCase):
 
         combinations_iter = itertools.product(contents, methods, input_sizes, output_sizes)
         for content, method, input_size, output_size in combinations_iter:
-            with self.subTest(method=method, input_size=input_size, output_size=output_size):
+            with self.subTest(content=content[:5], method=method, input_size=input_size, output_size=output_size):
                 files = [
                     (name, size, b''.join(chunks))
                     for name, size, chunks in stream_unzip(yield_input(content, method, input_size), chunk_size=output_size)
