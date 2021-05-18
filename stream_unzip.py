@@ -7,9 +7,6 @@ def stream_unzip(zipfile_chunks, chunk_size=65536):
     zip64_compressed_size = 4294967295
     zip64_size_signature = b'\x01\x00'
 
-    # Maximum size for any untrusted fields to avoid using too much memory
-    max_size = 65536
-
     def get_byte_readers(iterable):
         # Return functions to return a specific number of bytes from the iterable
         # - read_multiple_chunks: yields chunks as they come up (often for a "body")
@@ -81,8 +78,6 @@ def stream_unzip(zipfile_chunks, chunk_size=65536):
             extra_signature = extra[extra_offset:extra_offset+2]
             extra_offset += 2
             extra_data_size, = Struct('<H').unpack(extra[extra_offset:extra_offset+2])
-            if extra_data_size > max_size:
-                raise ValueError(f'Extra field is too long: {extra_data_size}')
             extra_offset += 2
             extra_data = extra[extra_offset:extra_offset+extra_data_size]
             extra_offset += extra_data_size
@@ -98,12 +93,6 @@ def stream_unzip(zipfile_chunks, chunk_size=65536):
 
         if flags not in [b'\x00\x00', b'\x08\x00']:
             raise ValueError(f'Unsupported flags {flags}')
-
-        if file_name_len > max_size:
-            raise ValueError(f'File name is too long: {file_name_len}')
-
-        if extra_field_len > max_size:
-            raise ValueError(f'Extra field is too long: {file_name_len}')
 
         file_name = read_single_chunk(file_name_len)
         extra = parse_extra(read_single_chunk(extra_field_len))
