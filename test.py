@@ -1,3 +1,4 @@
+import itertools
 import io
 import unittest
 import uuid
@@ -8,48 +9,40 @@ from stream_unzip import stream_unzip
 
 class TestStreamUnzip(unittest.TestCase):
 
-    def test_large_chunk_multiple_methods(self):
+    def test_methods_and_chunk_sizes(self):
         methods = [zipfile.ZIP_DEFLATED, zipfile.ZIP_STORED]
-        contents = b''.join([uuid.uuid4().hex.encode() for _ in range(0, 100000)])
+        input_sizes = [1, 7, 65536]
+        output_sizes = [1, 7, 65536]
 
-        def yield_input(method):
+        contents = [
+            b'short',
+            b''.join([uuid.uuid4().hex.encode() for _ in range(0, 100000)])
+        ]
+
+        def yield_input(content, method, input_size):
             file = io.BytesIO()
-            with zipfile.ZipFile(file, 'w', zipfile.ZIP_DEFLATED) as zf:
-                zf.writestr('first.txt', contents)
-                zf.writestr('second.txt', b'second')
-
-            yield file.getvalue()
-
-        for method in methods:
-            files = [(name, size, b''.join(chunks)) for name, size, chunks in stream_unzip(yield_input(method))]
-            self.assertEqual(files[0][0], b'first.txt')
-            self.assertEqual(files[0][1], len(contents))
-            self.assertEqual(files[0][2], contents)
-
-            self.assertEqual(files[1][0], b'second.txt')
-            self.assertEqual(files[1][1], 6)
-            self.assertEqual(files[1][2], b'second')
-
-            self.assertEqual(len(files), 2)
-
-    def test_small_chunk(self):
-        contents = b''.join([uuid.uuid4().hex.encode() for _ in range(0, 100000)])
-
-        def yield_input():
-            file = io.BytesIO()
-            with zipfile.ZipFile(file, 'w', zipfile.ZIP_DEFLATED) as zf:
-                zf.writestr('first.txt', contents)
+            with zipfile.ZipFile(file, 'w', method) as zf:
+                zf.writestr('first.txt', content)
+                zf.writestr('second.txt', content)
 
             zip_bytes = file.getvalue()
-            chunk_size = 1
 
-            for i in range(0, len(zip_bytes), chunk_size):
-                yield zip_bytes[i:i + chunk_size]
+            for i in range(0, len(zip_bytes), input_size):
+                yield zip_bytes[i:i + input_size]
 
-        files = [(name, size, b''.join(chunks)) for name, size, chunks in stream_unzip(yield_input())]
-        self.assertEqual(files[0][0], b'first.txt')
-        self.assertEqual(files[0][1], len(contents))
-        self.assertEqual(files[0][2], contents)
+        combinations_iter = itertools.product(contents, methods, input_sizes, output_sizes)
+        for content, method, input_size, output_size in combinations_iter:
+            with self.subTest(method=method, input_size=input_size, output_size=output_size):
+                files = [
+                    (name, size, b''.join(chunks))
+                    for name, size, chunks in stream_unzip(yield_input(content, method, input_size), chunk_size=output_size)
+                ]
+                self.assertEqual(files[0][0], b'first.txt')
+                self.assertEqual(files[0][1], len(content))
+                self.assertEqual(files[0][2], content)
+                self.assertEqual(files[1][0], b'second.txt')
+                self.assertEqual(files[1][1], len(content))
+                self.assertEqual(files[1][2], content)
 
     def test_streaming(self):
         contents = b''.join([uuid.uuid4().hex.encode() for _ in range(0, 10000)])

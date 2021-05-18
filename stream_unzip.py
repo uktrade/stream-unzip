@@ -116,10 +116,6 @@ def stream_unzip(zipfile_chunks, chunk_size=65536):
                 if dobj.eof:
                     break
 
-            uncompressed_chunk = dobj.flush()
-            if uncompressed_chunk:
-                yield uncompressed_chunk
-
             if dobj.unused_data:
                 return_unused(dobj.unused_data)
 
