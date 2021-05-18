@@ -102,6 +102,9 @@ def stream_unzip(zipfile_chunks, chunk_size=65536):
         if compressed_size == zip64_compressed_size:
             uncompressed_size, compressed_size = Struct('<QQ').unpack(extra[zip64_size_signature])
 
+        if flags == b'\x08\x00':
+            uncompressed_size = None
+
         def _decompress_deflate():
             dobj = zlib.decompressobj(wbits=-zlib.MAX_WBITS)
 
@@ -132,9 +135,6 @@ def stream_unzip(zipfile_chunks, chunk_size=65536):
         uncompressed_bytes = \
             read_multiple_chunks(compressed_size) if compression == 0 else \
             _decompress_deflate()
-
-        if uncompressed_size == 0:
-            uncompressed_size = None
 
         return file_name, uncompressed_size, uncompressed_bytes
 

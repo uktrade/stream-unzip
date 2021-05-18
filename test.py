@@ -75,6 +75,21 @@ class TestStreamUnzip(unittest.TestCase):
             prev_i = i
         self.assertGreater(num_steps, 1000)
 
+    def test_empty_file(self):
+        def yield_input():
+            file = io.BytesIO()
+            with zipfile.ZipFile(file, 'w', zipfile.ZIP_DEFLATED) as zf:
+                zf.writestr('first.txt', b'')
+
+            yield file.getvalue()
+
+        files = [
+            (name, size, b''.join(chunks))
+            for name, size, chunks in stream_unzip(yield_input())
+        ]
+
+        self.assertEqual(files, [(b'first.txt', 0, b'')])
+
     def test_python_large(self):
         def yield_input():
             with open('fixtures/python38_zip64.zip', 'rb') as f:
