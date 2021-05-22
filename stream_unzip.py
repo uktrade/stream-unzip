@@ -129,10 +129,10 @@ def stream_unzip(zipfile_chunks, chunk_size=65536):
             # Read the data descriptor
             if flags == b'\x08\x00':
                 optional_signature = read_single_chunk(4)
-                if optional_signature == b'PK\x07\x08':
-                    read_single_chunk(12)
-                else:
-                    read_single_chunk(8)
+                descriptor_length = \
+                    12 if optional_signature == b'PK\x07\x08' else \
+                    8
+                read_single_chunk(descriptor_length)
 
         uncompressed_bytes = \
             read_multiple_chunks(compressed_size) if compression == 0 else \
