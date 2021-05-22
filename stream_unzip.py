@@ -17,33 +17,6 @@ def stream_unzip(zipfile_chunks, chunk_size=65536):
         offset = 0
         it = iter(iterable)
 
-        def _read_multiple_chunks(amt):
-            nonlocal chunk
-            nonlocal offset
-
-            # Yield anything we already have
-            if chunk:
-                to_yield = min(amt, len(chunk) - offset)
-                yield chunk[offset:offset + to_yield]
-                amt -= to_yield
-                offset += to_yield % len(chunk)
-                chunk = chunk if offset else b''
-
-            # Yield the rest as it comes in
-            while amt:
-                try:
-                    chunk = next(it)
-                except StopIteration:
-                    raise ValueError('Fewer bytes than expected in zip') from None
-                to_yield = min(amt, len(chunk))
-                yield chunk[:to_yield]
-                amt -= to_yield
-                offset = to_yield % len(chunk)
-                chunk = chunk if offset else b''
-
-        def _read_single_chunk(amt):
-            return b''.join(chunk for chunk in _read_multiple_chunks(amt))
-
         def _read_remaining():
             nonlocal chunk
             nonlocal offset
@@ -63,6 +36,27 @@ def stream_unzip(zipfile_chunks, chunk_size=65536):
                     yield next(it)
                 except StopIteration:
                     break
+
+        def _read_multiple_chunks(amt):
+            nonlocal chunk
+            nonlocal offset
+
+            remaining_iter = read_remaining()
+
+            while amt:
+                try:
+                    chunk = next(remaining_iter)
+                except StopIteration:
+                    raise ValueError('Fewer bytes than expected in zip') from None
+
+                to_yield = min(amt, len(chunk) - offset)
+                yield chunk[offset:offset + to_yield]
+                amt -= to_yield
+                offset += to_yield % len(chunk)
+                chunk = chunk if offset else b''
+
+        def _read_single_chunk(amt):
+            return b''.join(chunk for chunk in _read_multiple_chunks(amt))
 
         def _return_unused(unused):
             nonlocal chunk
