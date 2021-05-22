@@ -79,6 +79,24 @@ class TestStreamUnzip(unittest.TestCase):
 
         self.assertTrue(raised_generator_exit)
 
+    def test_truncation_raises_value_error(self):
+        input_size = 65536
+        content = b''.join([uuid.uuid4().hex.encode() for _ in range(0, 100000)])
+
+        def yield_input():
+            file = io.BytesIO()
+            with zipfile.ZipFile(file, 'w', zipfile.ZIP_DEFLATED) as zf:
+                zf.writestr('first.txt', content)
+
+            zip_bytes = file.getvalue()
+
+            yield zip_bytes[:input_size]
+
+        with self.assertRaises(ValueError):
+            for name, size, chunks in stream_unzip(yield_input()):
+                for chunk in chunks:
+                    pass
+
     def test_streaming(self):
         contents = b''.join([uuid.uuid4().hex.encode() for _ in range(0, 10000)])
         latest = None
