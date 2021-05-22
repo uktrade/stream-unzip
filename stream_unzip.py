@@ -48,9 +48,8 @@ def stream_unzip(zipfile_chunks, chunk_size=65536):
             nonlocal chunk
             nonlocal offset
 
-            # We might break in the middle of iterating over _read_remaining,
-            # which is _during_ the yield, so we have to leave the state
-            # right for next time
+            # We only go past the yield on the next iteration, which might
+            # not happen, so we have to leave the state right for next time
             prev_offset = offset
             prev_chunk = chunk
             offset = 0
@@ -108,7 +107,14 @@ def stream_unzip(zipfile_chunks, chunk_size=65536):
         def _decompress_deflate():
             dobj = zlib.decompressobj(wbits=-zlib.MAX_WBITS)
 
-            for compressed_chunk in read_remaining():
+            remaining_iter = read_remaining()
+
+            while not dobj.eof:
+                try:
+                    compressed_chunk = next(remaining_iter)
+                except StopIteration:
+                    raise ValueError('Fewer bytes than expected in zip') from None
+
                 uncompressed_chunk = dobj.decompress(compressed_chunk, max_length=chunk_size)
                 if uncompressed_chunk:
                     yield uncompressed_chunk
@@ -117,12 +123,6 @@ def stream_unzip(zipfile_chunks, chunk_size=65536):
                     uncompressed_chunk = dobj.decompress(dobj.unconsumed_tail, max_length=chunk_size)
                     if uncompressed_chunk:
                         yield uncompressed_chunk
-
-                if dobj.eof:
-                    break
-
-            if not dobj.eof:
-                raise ValueError('Fewer bytes than expected in zip')
 
             return_unused(dobj.unused_data)
 
