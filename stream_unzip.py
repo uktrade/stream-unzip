@@ -121,6 +121,9 @@ def stream_unzip(zipfile_chunks, chunk_size=65536):
                 if dobj.eof:
                     break
 
+            if not dobj.eof:
+                raise ValueError('Fewer bytes than expected in zip')
+
             return_unused(dobj.unused_data)
 
             # Read the data descriptor
