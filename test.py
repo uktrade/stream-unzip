@@ -44,6 +44,41 @@ class TestStreamUnzip(unittest.TestCase):
                 self.assertEqual(files[1][1], len(content))
                 self.assertEqual(files[1][2], content)
 
+    def test_break_raises_generator_exit(self):
+        input_size = 65536
+        content = b''.join([uuid.uuid4().hex.encode() for _ in range(0, 100000)])
+
+        raised_generator_exit = False
+
+        def yield_input():
+            nonlocal raised_generator_exit
+
+            file = io.BytesIO()
+            with zipfile.ZipFile(file, 'w', zipfile.ZIP_DEFLATED) as zf:
+                zf.writestr('first.txt', content)
+                zf.writestr('second.txt', content)
+
+            zip_bytes = file.getvalue()
+
+            try:
+                for i in range(0, len(zip_bytes), input_size):
+                    yield zip_bytes[i:i + input_size]
+            except GeneratorExit:
+                raised_generator_exit = True
+
+        for name, size, chunks in stream_unzip(yield_input()):
+            for chunk in chunks:
+                pass
+    
+        self.assertFalse(raised_generator_exit)
+
+        for name, size, chunks in stream_unzip(yield_input()):
+            for chunk in chunks:
+                pass
+            break
+
+        self.assertTrue(raised_generator_exit)
+
     def test_streaming(self):
         contents = b''.join([uuid.uuid4().hex.encode() for _ in range(0, 10000)])
         latest = None
