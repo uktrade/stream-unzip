@@ -121,8 +121,7 @@ def stream_unzip(zipfile_chunks, chunk_size=65536):
                 if dobj.eof:
                     break
 
-            if dobj.unused_data:
-                return_unused(dobj.unused_data)
+            return_unused(dobj.unused_data)
 
             # Read the data descriptor
             if flags == b'\x08\x00':
