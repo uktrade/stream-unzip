@@ -98,7 +98,8 @@ def stream_unzip(zipfile_chunks, chunk_size=65536):
         file_name = read_single_chunk(file_name_len)
         extra = parse_extra(read_single_chunk(extra_field_len))
 
-        if compressed_size == zip64_compressed_size:
+        is_zip64 = compressed_size == zip64_compressed_size and uncompressed_size == zip64_compressed_size
+        if is_zip64:
             uncompressed_size, compressed_size = Struct('<QQ').unpack(extra[zip64_size_signature])
 
         if flags == b'\x08\x00':
@@ -128,11 +129,14 @@ def stream_unzip(zipfile_chunks, chunk_size=65536):
 
             # Read the data descriptor
             if flags == b'\x08\x00':
-                optional_signature = read_single_chunk(4)
-                descriptor_length = \
-                    12 if optional_signature == b'PK\x07\x08' else \
-                    8
-                read_single_chunk(descriptor_length)
+                dd_optional_signature = read_single_chunk(4)
+                dd_so_far = \
+                    0 if dd_optional_signature == b'PK\x07\x08' else \
+                    4
+                dd_remaining = \
+                    (20 - dd_so_far) if is_zip64 else \
+                    (12 - dd_so_far)
+                read_single_chunk(dd_remaining)
 
         uncompressed_bytes = \
             read_multiple_chunks(compressed_size) if compression == 0 else \

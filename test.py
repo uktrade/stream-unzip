@@ -187,3 +187,26 @@ class TestStreamUnzip(unittest.TestCase):
         self.assertEqual(files[2][0], b'__MACOSX/._first.txt')
         self.assertEqual(files[3], (b'second.txt', None, b'Contents of the second file'))
         self.assertEqual(files[4][0], b'__MACOSX/._second.txt')
+
+    def test_infozip_large_with_descriptors(self):
+        def yield_input():
+            with open('fixtures/infozip_3_0_zip64_with_descriptors.zip', 'rb') as f:
+                while True:
+                    chunk = f.read(65536)
+                    if not chunk:
+                        break
+                    yield chunk
+
+        num_received_bytes = []
+        sizes = []
+        names = []
+        for name, size, chunks in stream_unzip(yield_input()):
+            names.append(name)
+            sizes.append(size)
+            num_received_bytes.append(0)
+            for chunk in chunks:
+                num_received_bytes[-1] += len(chunk)
+
+        self.assertEqual(names, [b'first.txt', b'second.txt'])
+        self.assertEqual(sizes, [None, None])
+        self.assertEqual(num_received_bytes, [5000000000, 19])
