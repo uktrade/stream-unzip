@@ -72,9 +72,8 @@ def stream_unzip(zipfile_chunks, chunk_size=65536):
 
     read_multiple_chunks, read_single_chunk, read_remaining, return_unused = get_byte_readers(zipfile_chunks)
 
-    def parse_extra(extra):
+    def get_extra_data(extra, desired_signature):
         extra_offset = 0
-        extra_dict = {}
         while extra_offset != len(extra):
             extra_signature = extra[extra_offset:extra_offset+2]
             extra_offset += 2
@@ -82,8 +81,8 @@ def stream_unzip(zipfile_chunks, chunk_size=65536):
             extra_offset += 2
             extra_data = extra[extra_offset:extra_offset+extra_data_size]
             extra_offset += extra_data_size
-            extra_dict[extra_signature] = extra_data
-        return extra_dict
+            if extra_signature == desired_signature:
+                return extra_data
 
     def yield_file():
         version, flags, compression, mod_time, mod_date, crc_32, compressed_size, uncompressed_size, file_name_len, extra_field_len = \
@@ -96,11 +95,11 @@ def stream_unzip(zipfile_chunks, chunk_size=65536):
             raise ValueError(f'Unsupported flags {flags}')
 
         file_name = read_single_chunk(file_name_len)
-        extra = parse_extra(read_single_chunk(extra_field_len))
+        extra = read_single_chunk(extra_field_len)
 
         is_zip64 = compressed_size == zip64_compressed_size and uncompressed_size == zip64_compressed_size
         if is_zip64:
-            uncompressed_size, compressed_size = Struct('<QQ').unpack(extra[zip64_size_signature])
+            uncompressed_size, compressed_size = Struct('<QQ').unpack(get_extra_data(extra, zip64_size_signature))
 
         if flags == b'\x08\x00':
             uncompressed_size = None
