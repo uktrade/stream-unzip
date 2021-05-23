@@ -6,6 +6,7 @@ def stream_unzip(zipfile_chunks, chunk_size=65536):
     local_file_header_struct = Struct('<H2sHHHIIIHH')
     zip64_compressed_size = 4294967295
     zip64_size_signature = b'\x01\x00'
+    central_directory_signature = b'\x50\x4b\x01\x02'
 
     def get_byte_readers(iterable):
         # Return functions to return a specific number of bytes from the iterable
@@ -147,8 +148,9 @@ def stream_unzip(zipfile_chunks, chunk_size=65536):
         signature = read_single_chunk(len(local_file_header_signature))
         if signature == local_file_header_signature:
             yield yield_file()
-        else:
-            # We must have reached the central directory record
+        elif signature == central_directory_signature:
             for _ in read_remaining():
                 pass
             break
+        else:
+            raise ValueError('Unexpected signature')
