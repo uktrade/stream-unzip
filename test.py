@@ -44,6 +44,36 @@ class TestStreamUnzip(unittest.TestCase):
                 self.assertEqual(files[1][1], len(content))
                 self.assertEqual(files[1][2], content)
 
+    def test_output_size(self):
+        methods = [zipfile.ZIP_DEFLATED, zipfile.ZIP_STORED]
+        input_sizes = [1, 7, 65536]
+        output_sizes = [1, 7, 65536]
+
+        contents = [
+            b'short',
+            b''.join([uuid.uuid4().hex.encode() for _ in range(0, 100000)])
+        ]
+
+        def yield_input(content, method, input_size):
+            file = io.BytesIO()
+            with zipfile.ZipFile(file, 'w', method) as zf:
+                zf.writestr('first.txt', content)
+                zf.writestr('second.txt', content)
+
+            zip_bytes = file.getvalue()
+
+            for i in range(0, len(zip_bytes), input_size):
+                yield zip_bytes[i:i + input_size]
+
+        all_smaller = True
+        combinations_iter = itertools.product(contents, methods, input_sizes, output_sizes)
+        for content, method, input_size, output_size in combinations_iter:
+            with self.subTest(content=content[:5], method=method, input_size=input_size, output_size=output_size):
+                for _, _, chunks in stream_unzip(yield_input(content, method, input_size), chunk_size=output_size):
+                    for chunk in chunks:
+                        all_smaller = all_smaller and len(chunk) <= output_size
+        self.assertTrue(all_smaller)
+
     def test_exception_propagates(self):
         methods = [zipfile.ZIP_DEFLATED, zipfile.ZIP_STORED]
         input_sizes = [1, 7, 65536]
