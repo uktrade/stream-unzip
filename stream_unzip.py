@@ -86,7 +86,7 @@ def stream_unzip(zipfile_chunks, chunk_size=65536):
                 return extra_data
 
     def yield_file():
-        version, flags, compression, mod_time, mod_date, crc_32, compressed_size, uncompressed_size, file_name_len, extra_field_len = \
+        version, flags, compression, mod_time, mod_date, crc_32_expected, compressed_size, uncompressed_size, file_name_len, extra_field_len = \
             local_file_header_struct.unpack(read_single_chunk(local_file_header_struct.size))
 
         if compression not in [0, 8]:
@@ -102,12 +102,16 @@ def stream_unzip(zipfile_chunks, chunk_size=65536):
         if is_zip64:
             uncompressed_size, compressed_size = Struct('<QQ').unpack(get_extra_data(extra, zip64_size_signature))
 
-        if flags == b'\x08\x00':
+        has_data_descriptor = flags == b'\x08\x00'
+
+        if has_data_descriptor:
             uncompressed_size = None
 
         def _decompress_deflate():
-            dobj = zlib.decompressobj(wbits=-zlib.MAX_WBITS)
+            nonlocal crc_32_expected
 
+            dobj = zlib.decompressobj(wbits=-zlib.MAX_WBITS)
+            crc_32_actual = zlib.crc32(b'')
             remaining_iter = read_remaining()
 
             while not dobj.eof:
@@ -118,28 +122,43 @@ def stream_unzip(zipfile_chunks, chunk_size=65536):
 
                 uncompressed_chunk = dobj.decompress(compressed_chunk, chunk_size)
                 if uncompressed_chunk:
+                    crc_32_actual = zlib.crc32(uncompressed_chunk, crc_32_actual)
                     yield uncompressed_chunk
 
                 while dobj.unconsumed_tail and not dobj.eof:
                     uncompressed_chunk = dobj.decompress(dobj.unconsumed_tail, chunk_size)
                     if uncompressed_chunk:
+                        crc_32_actual = zlib.crc32(uncompressed_chunk, crc_32_actual)
                         yield uncompressed_chunk
 
             return_unused(dobj.unused_data)
 
-            # Read the data descriptor
-            if flags == b'\x08\x00':
+            if has_data_descriptor:
                 dd_optional_signature = read_single_chunk(4)
-                dd_so_far = \
+                dd_so_far_num = \
                     0 if dd_optional_signature == b'PK\x07\x08' else \
                     4
+                dd_so_far = dd_optional_signature[:dd_so_far_num]
                 dd_remaining = \
-                    (20 - dd_so_far) if is_zip64 else \
-                    (12 - dd_so_far)
-                read_single_chunk(dd_remaining)
+                    (20 - dd_so_far_num) if is_zip64 else \
+                    (12 - dd_so_far_num)
+                dd = dd_so_far + read_single_chunk(dd_remaining)
+                crc_32_expected, = Struct('<I').unpack(dd[:4])
+
+            if crc_32_actual != crc_32_expected:
+                raise ValueError('CRC-32 does not match')
+
+        def _with_crc_32_check(chunks):
+            crc_32_actual = zlib.crc32(b'')
+            for chunk in chunks:
+                crc_32_actual = zlib.crc32(chunk, crc_32_actual)
+                yield chunk
+
+            if crc_32_actual != crc_32_expected:
+                raise ValueError('CRC-32 does not match')
 
         uncompressed_bytes = \
-            read_multiple_chunks(compressed_size) if compression == 0 else \
+            _with_crc_32_check(read_multiple_chunks(compressed_size)) if compression == 0 else \
             _decompress_deflate()
 
         return file_name, uncompressed_size, uncompressed_bytes
