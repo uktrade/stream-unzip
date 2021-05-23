@@ -9,69 +9,66 @@ def stream_unzip(zipfile_chunks, chunk_size=65536):
     central_directory_signature = b'\x50\x4b\x01\x02'
 
     def get_byte_readers(iterable):
-        # Return functions to return a specific number of bytes from the iterable
-        # - read_multiple_chunks: yields chunks as they come up (often for a "body")
-        # - read_single_chunk: returns a single chunks (often for "header")
-        # - _read_remaining: yields any remaining chunks
+        # Return functions to return/"replace" bytes from/to the iterable
+        # - _yield_all: yields chunks as they come up (often for a "body")
+        # - _yield_num: yields chunks as the come up, up to a fixed number of bytes
+        # - _get_num: returns a single `bytes` of a given length
+        # - _return_unused: puts "unused" bytes "back", to be retrieved by a yield/get call
 
         chunk = b''
         offset = 0
         it = iter(iterable)
 
-        def _read_multiple_chunks(amt):
+        def _yield_all():
             nonlocal chunk
             nonlocal offset
-
-            # Yield anything we already have
-            if chunk:
-                to_yield = min(amt, len(chunk) - offset)
-                yield chunk[offset:offset + to_yield]
-                amt -= to_yield
-                offset += to_yield % len(chunk)
-                chunk = chunk if offset else b''
-
-            # Yield the rest as it comes in
-            while amt:
-                try:
-                    chunk = next(it)
-                except StopIteration:
-                    raise ValueError('Fewer bytes than expected in zip') from None
-                to_yield = min(amt, len(chunk))
-                yield chunk[:to_yield]
-                amt -= to_yield
-                offset = to_yield % len(chunk)
-                chunk = chunk if offset else b''
-
-        def _read_single_chunk(amt):
-            return b''.join(chunk for chunk in _read_multiple_chunks(amt))
-
-        def _read_remaining():
-            nonlocal chunk
-            nonlocal offset
-
-            # We only go past the yield on the next iteration, which might
-            # not happen, so we have to leave the state right for next time
-            prev_offset = offset
-            prev_chunk = chunk
-            offset = 0
-            chunk = b''
-            if prev_chunk:
-                yield prev_chunk[prev_offset:]
-            prev_chunk = b''
 
             while True:
-                try:
-                    yield next(it)
-                except StopIteration:
-                    break
+                if not chunk:
+                    try:
+                        chunk = next(it)
+                    except StopIteration:
+                        break
+                prev_offset = offset
+                prev_chunk = chunk
+                to_yield = min(len(chunk) - offset, chunk_size)
+                offset = (offset + to_yield) % len(chunk)
+                chunk = chunk if offset else b''
+                yield prev_chunk[prev_offset:prev_offset + to_yield]
+
+        def _yield_num(num):
+            nonlocal chunk
+            nonlocal offset
+
+            while num:
+                if not chunk:
+                    try:
+                        chunk = next(it)
+                    except StopIteration:
+                        raise ValueError('Fewer bytes than expected in zip') from None
+                prev_offset = offset
+                prev_chunk = chunk
+                to_yield = min(num, len(chunk) - offset, chunk_size)
+                offset = (offset + to_yield) % len(chunk)
+                chunk = chunk if offset else b''
+                num -= to_yield
+                yield prev_chunk[prev_offset:prev_offset + to_yield]
+
+        def _get_num(num):
+            return b''.join(chunk for chunk in _yield_num(num))
 
         def _return_unused(unused):
             nonlocal chunk
-            chunk += unused
+            nonlocal offset
+            if len(unused) <= offset:
+                offset -= len(unused)
+            else:
+                chunk = unused + chunk[offset:]
+                offset = 0
 
-        return _read_multiple_chunks, _read_single_chunk, _read_remaining, _return_unused
+        return _yield_all, _yield_num, _get_num, _return_unused
 
-    read_multiple_chunks, read_single_chunk, read_remaining, return_unused = get_byte_readers(zipfile_chunks)
+    yield_all, yield_num, get_num, return_unused = get_byte_readers(zipfile_chunks)
 
     def get_extra_data(extra, desired_signature):
         extra_offset = 0
@@ -87,7 +84,7 @@ def stream_unzip(zipfile_chunks, chunk_size=65536):
 
     def yield_file():
         version, flags, compression, mod_time, mod_date, crc_32_expected, compressed_size, uncompressed_size, file_name_len, extra_field_len = \
-            local_file_header_struct.unpack(read_single_chunk(local_file_header_struct.size))
+            local_file_header_struct.unpack(get_num(local_file_header_struct.size))
 
         if compression not in [0, 8]:
             raise ValueError('Unsupported compression type {}'.format(compression))
@@ -95,8 +92,8 @@ def stream_unzip(zipfile_chunks, chunk_size=65536):
         if flags not in [b'\x00\x00', b'\x08\x00']:
             raise ValueError('Unsupported flags {}'.format(flags))
 
-        file_name = read_single_chunk(file_name_len)
-        extra = read_single_chunk(extra_field_len)
+        file_name = get_num(file_name_len)
+        extra = get_num(extra_field_len)
 
         is_zip64 = compressed_size == zip64_compressed_size and uncompressed_size == zip64_compressed_size
         if is_zip64:
@@ -112,11 +109,11 @@ def stream_unzip(zipfile_chunks, chunk_size=65536):
 
             dobj = zlib.decompressobj(wbits=-zlib.MAX_WBITS)
             crc_32_actual = zlib.crc32(b'')
-            remaining_iter = read_remaining()
+            all_iter = yield_all()
 
             while not dobj.eof:
                 try:
-                    compressed_chunk = next(remaining_iter)
+                    compressed_chunk = next(all_iter)
                 except StopIteration:
                     raise ValueError('Fewer bytes than expected in zip') from None
 
@@ -134,7 +131,7 @@ def stream_unzip(zipfile_chunks, chunk_size=65536):
             return_unused(dobj.unused_data)
 
             if has_data_descriptor:
-                dd_optional_signature = read_single_chunk(4)
+                dd_optional_signature = get_num(4)
                 dd_so_far_num = \
                     0 if dd_optional_signature == b'PK\x07\x08' else \
                     4
@@ -142,7 +139,7 @@ def stream_unzip(zipfile_chunks, chunk_size=65536):
                 dd_remaining = \
                     (20 - dd_so_far_num) if is_zip64 else \
                     (12 - dd_so_far_num)
-                dd = dd_so_far + read_single_chunk(dd_remaining)
+                dd = dd_so_far + get_num(dd_remaining)
                 crc_32_expected, = Struct('<I').unpack(dd[:4])
 
             if crc_32_actual != crc_32_expected:
@@ -158,18 +155,18 @@ def stream_unzip(zipfile_chunks, chunk_size=65536):
                 raise ValueError('CRC-32 does not match')
 
         uncompressed_bytes = \
-            _with_crc_32_check(read_multiple_chunks(compressed_size)) if compression == 0 else \
+            _with_crc_32_check(yield_num(compressed_size)) if compression == 0 else \
             _decompress_deflate()
 
         return file_name, uncompressed_size, uncompressed_bytes
 
     while True:
-        signature = read_single_chunk(len(local_file_header_signature))
+        signature = get_num(len(local_file_header_signature))
         if signature == local_file_header_signature:
             yield yield_file()
         elif signature == central_directory_signature:
-            for _ in read_remaining():
+            for _ in yield_all():
                 pass
             break
         else:
-            raise ValueError('Unexpected signature')
+            raise ValueError(b'Unexpected signature ' + signature)
