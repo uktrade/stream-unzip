@@ -74,6 +74,36 @@ class TestStreamUnzip(unittest.TestCase):
                         for _ in chunks:
                             pass
 
+    def test_bad_crc_32(self):
+        methods = [zipfile.ZIP_DEFLATED, zipfile.ZIP_STORED]
+        input_sizes = [1, 7, 65536]
+        output_sizes = [1, 7, 65536]
+
+        contents = [
+            b'short',
+            b''.join([uuid.uuid4().hex.encode() for _ in range(0, 100000)])
+        ]
+
+        def yield_input(content, method, input_size):
+            file = io.BytesIO()
+            with zipfile.ZipFile(file, 'w', method) as zf:
+                zf.writestr('first.txt', content)
+                zf.writestr('second.txt', content)
+
+            zip_bytes = file.getvalue()
+            zip_bytes = zip_bytes[0:16] + b'0' + zip_bytes[17:]
+
+            for i in range(0, len(zip_bytes), input_size):
+                yield zip_bytes[i:i + input_size]
+
+        combinations_iter = itertools.product(contents, methods, input_sizes, output_sizes)
+        for content, method, input_size, output_size in combinations_iter:
+            with self.subTest(content=content[:5], method=method, input_size=input_size, output_size=output_size):
+                with self.assertRaisesRegex(Exception, 'CRC-32 does not match'):
+                    for _, _, chunks in stream_unzip(yield_input(content, method, input_size), chunk_size=output_size):
+                        for _ in chunks:
+                            pass
+
     def test_break_raises_generator_exit(self):
         input_size = 65536
         content = b''.join([uuid.uuid4().hex.encode() for _ in range(0, 100000)])
