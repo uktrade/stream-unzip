@@ -40,6 +40,17 @@ workflows:
       - test-3.6.2
       - test-3.6.1
       - test-3.6.0
+      - test-3.5.10
+      - test-3.5.9
+      - test-3.5.8
+      - test-3.5.7
+      - test-3.5.6
+      - test-3.5.5
+      - test-3.5.4
+      - test-3.5.3
+      - test-3.5.2
+      - test-3.5.1
+      - test-3.5.0
 jobs:
   test-3.9.5:
     docker:
@@ -209,3 +220,47 @@ jobs:
     <<: *template
     docker:
       - image: python:3.6.0
+  test-3.5.10:
+    <<: *template
+    docker:
+      - image: python:3.5.10
+  test-3.5.9:
+    <<: *template
+    docker:
+      - image: python:3.5.9
+  test-3.5.8:
+    <<: *template
+    docker:
+      - image: python:3.5.8
+  test-3.5.7:
+    <<: *template
+    docker:
+      - image: python:3.5.7
+  test-3.5.6:
+    <<: *template
+    docker:
+      - image: python:3.5.6
+  test-3.5.5:
+    <<: *template
+    docker:
+      - image: python:3.5.5
+  test-3.5.4:
+    <<: *template
+    docker:
+      - image: python:3.5.4
+  test-3.5.3:
+    <<: *template
+    docker:
+      - image: python:3.5.3
+  test-3.5.2:
+    <<: *template
+    docker:
+      - image: python:3.5.2
+  test-3.5.1:
+    <<: *template
+    docker:
+      - image: python:3.5.1
+  test-3.5.0:
+    <<: *template
+    docker:
+      - image: python:3.5.0

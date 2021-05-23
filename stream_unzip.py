@@ -90,10 +90,10 @@ def stream_unzip(zipfile_chunks, chunk_size=65536):
             local_file_header_struct.unpack(read_single_chunk(local_file_header_struct.size))
 
         if compression not in [0, 8]:
-            raise ValueError(f'Unsupported compression type {compression}')
+            raise ValueError('Unsupported compression type {}'.format(compression))
 
         if flags not in [b'\x00\x00', b'\x08\x00']:
-            raise ValueError(f'Unsupported flags {flags}')
+            raise ValueError('Unsupported flags {}'.format(flags))
 
         file_name = read_single_chunk(file_name_len)
         extra = read_single_chunk(extra_field_len)
@@ -116,12 +116,12 @@ def stream_unzip(zipfile_chunks, chunk_size=65536):
                 except StopIteration:
                     raise ValueError('Fewer bytes than expected in zip') from None
 
-                uncompressed_chunk = dobj.decompress(compressed_chunk, max_length=chunk_size)
+                uncompressed_chunk = dobj.decompress(compressed_chunk, chunk_size)
                 if uncompressed_chunk:
                     yield uncompressed_chunk
 
                 while dobj.unconsumed_tail and not dobj.eof:
-                    uncompressed_chunk = dobj.decompress(dobj.unconsumed_tail, max_length=chunk_size)
+                    uncompressed_chunk = dobj.decompress(dobj.unconsumed_tail, chunk_size)
                     if uncompressed_chunk:
                         yield uncompressed_chunk
 
