@@ -19,7 +19,7 @@ setuptools.setup(
         'Programming Language :: Python :: 3',
         'License :: OSI Approved :: MIT License',
     ],
-    python_requires='>=3.6.0',
+    python_requires='>=3.5.0',
     py_modules=[
         'stream_unzip',
     ],
