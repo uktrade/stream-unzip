@@ -121,7 +121,7 @@ class TestStreamUnzip(unittest.TestCase):
                 zf.writestr('second.txt', content)
 
             zip_bytes = file.getvalue()
-            zip_bytes = zip_bytes[0:16] + b'0' + zip_bytes[17:]
+            zip_bytes = zip_bytes[0:16] + bytes([zip_bytes[17] + 1 if zip_bytes[17] < 256 else zip_bytes[17] - 1]) + zip_bytes[17:]
 
             for i in range(0, len(zip_bytes), input_size):
                 yield zip_bytes[i:i + input_size]
