@@ -89,8 +89,20 @@ def stream_unzip(zipfile_chunks, chunk_size=65536):
         if compression not in [0, 8]:
             raise ValueError('Unsupported compression type {}'.format(compression))
 
-        if flags not in [b'\x00\x00', b'\x08\x00']:
-            raise ValueError('Unsupported flags {}'.format(flags))
+        def _flag_bits():
+            for b in flags:
+                for i in range(8):
+                    yield (b >> i) & 1
+
+        flag_bits = tuple(_flag_bits())
+        if (
+            flag_bits[0]      # Encrypted
+            or flag_bits[4]   # Enhanced deflate (Deflate64)
+            or flag_bits[5]   # Compressed patched
+            or flag_bits[6]   # Strong encrypted
+            or flag_bits[13]  # Masked header values
+        ):
+            raise ValueError('Unsupported flags {}'.format(flag_bits))
 
         file_name = get_num(file_name_len)
         extra = get_num(extra_field_len)
