@@ -21,7 +21,7 @@ from stream_unzip import stream_unzip
 import httpx
 
 def zipped_chunks():
-    # Iterable that yields the bytes zip file
+    # Iterable that yields the bytes of a zip file
     with httpx.stream('GET', 'https://www.example.com/my.zip') as r:
         yield from r.iter_bytes(chunk_size=65536)
 
