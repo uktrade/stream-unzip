@@ -23,7 +23,7 @@ import httpx
 def zipped_chunks():
     # Any iterable that yields a zip file
     with httpx.stream('GET', 'https://www.example.com/my.zip') as r:
-        yield from r.iter_bytes()
+        yield from r.iter_bytes(chunk_size=65536)
 
 for file_name, file_size, unzipped_chunks in stream_unzip(zipped_chunks()):
     for chunk in unzipped_chunks:
