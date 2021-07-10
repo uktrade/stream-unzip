@@ -14,14 +14,14 @@ pip install stream-unzip
 
 ## Usage
 
-A single function is exposed, `stream_unzip`, that takes a single argument: an iterable that should yield the bytes of a ZIP file. It returns an iterable, where each yielded item is a tuple of the file name, file size [`None` if this is not known], and another iterable itself yielding the unzipped bytes of that file.
+A single function is exposed, `stream_unzip`, that takes a single argument: an iterable that should yield the bytes of a ZIP file [with no zero-length chunks]. It returns an iterable, where each yielded item is a tuple of the file name, file size [`None` if this is not known], and another iterable itself yielding the unzipped bytes of that file.
 
 ```python
 from stream_unzip import stream_unzip
 import httpx
 
 def zipped_chunks():
-    # Any iterable that yields a zip file
+    # Iterable that yields the bytes zip file
     with httpx.stream('GET', 'https://www.example.com/my.zip') as r:
         yield from r.iter_bytes(chunk_size=65536)
 
