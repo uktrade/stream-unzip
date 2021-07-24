@@ -111,7 +111,7 @@ def stream_unzip(zipfile_chunks, chunk_size=65536):
         if is_zip64:
             uncompressed_size, compressed_size = Struct('<QQ').unpack(get_extra_data(extra, zip64_size_signature))
 
-        has_data_descriptor = flags == b'\x08\x00'
+        has_data_descriptor = flag_bits[3]
 
         if has_data_descriptor:
             uncompressed_size = None
