@@ -46,13 +46,11 @@ def stream_unzip(zipfile_chunks, chunk_size=65536):
                         chunk = next(it)
                     except StopIteration:
                         raise ValueError('Fewer bytes than expected in zip') from None
-                prev_offset = offset
-                prev_chunk = chunk
                 to_yield = min(num, len(chunk) - offset, chunk_size)
+                yield chunk[offset:offset + to_yield]
+                num -= to_yield
                 offset = (offset + to_yield) % len(chunk)
                 chunk = chunk if offset else b''
-                num -= to_yield
-                yield prev_chunk[prev_offset:prev_offset + to_yield]
 
         def _get_num(num):
             return b''.join(chunk for chunk in _yield_num(num))
