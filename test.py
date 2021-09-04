@@ -300,3 +300,30 @@ class TestStreamUnzip(unittest.TestCase):
         self.assertEqual(names, [b'first.txt', b'second.txt'])
         self.assertEqual(sizes, [None, None])
         self.assertEqual(num_received_bytes, [5000000000, 19])
+
+    def test_password_protected_file_correct_password(self):
+        def yield_input():
+            with open('fixtures/macos_10_14_5_password.zip', 'rb') as f:
+                while True:
+                    chunk = f.read(4)
+                    if not chunk:
+                        break
+                    yield chunk
+
+        files = [
+            (name, size, b''.join(chunks))
+            for name, size, chunks in stream_unzip(yield_input(), password=b'password')
+        ]
+        self.assertEqual(files, [
+            (b'compressed.txt', None, b'Some content to be password protected\n' * 14),
+            (b'uncompressed.txt', None, b'Some content to be password protected'),
+        ])
+
+    def test_password_protected_file_bad_password(self):
+        def yield_input():
+            with open('fixtures/macos_10_14_5_password.zip', 'rb') as f:
+                yield f.read()
+
+        with self.assertRaises(ValueError):
+            for name, size, chunks in stream_unzip(yield_input(), password=b'bad-password'):
+                next(chunks)

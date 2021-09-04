@@ -1,7 +1,7 @@
 from struct import Struct
 import zlib
 
-def stream_unzip(zipfile_chunks, chunk_size=65536):
+def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
     local_file_header_signature = b'\x50\x4b\x03\x04'
     local_file_header_struct = Struct('<H2sHHHIIIHH')
     zip64_compressed_size = 4294967295
@@ -96,8 +96,7 @@ def stream_unzip(zipfile_chunks, chunk_size=65536):
 
         flag_bits = tuple(_flag_bits())
         if (
-            flag_bits[0]      # Encrypted
-            or flag_bits[4]   # Enhanced deflate (Deflate64)
+            flag_bits[4]      # Enhanced deflate (Deflate64)
             or flag_bits[5]   # Compressed patched
             or flag_bits[6]   # Strong encrypted
             or flag_bits[13]  # Masked header values
@@ -111,10 +110,58 @@ def stream_unzip(zipfile_chunks, chunk_size=65536):
         if is_zip64:
             uncompressed_size, compressed_size = Struct('<QQ').unpack(get_extra_data(extra, zip64_size_signature))
 
+        is_weak_encrypted = flag_bits[0]
         has_data_descriptor = flag_bits[3]
 
         if has_data_descriptor:
             uncompressed_size = None
+
+        def decrypt(first_12, chunks):
+            key_0 = 305419896
+            key_1 = 591751049
+            key_2 = 878082192
+
+            def crc32(ch, crc):
+                crc = zlib.crc32(bytes([~ch & 0xFF]), crc)
+                return (~crc & 0xFF000000) + (crc & 0x00FFFFFF)
+
+            def update_keys(byte):
+                nonlocal key_0, key_1, key_2
+                key_0 = crc32(byte, key_0)
+                key_1 = (key_1 + (key_0 & 0xFF)) & 0xFFFFFFFF
+                key_1 = ((key_1 * 134775813) + 1) & 0xFFFFFFFF
+                key_2 = crc32(key_1 >> 24, key_2)
+
+            for byte in password:
+                update_keys(byte)
+
+            def decrypt(chunk):
+                chunk = bytearray(chunk)
+                for i, byte in enumerate(chunk):
+                    temp = key_2 | 2
+                    byte ^= ((temp * (temp ^ 1)) >> 8) & 0xFF
+                    update_keys(byte)
+                    chunk[i] = byte
+                return chunk
+
+            if decrypt(first_12)[11] != mod_time >> 8:
+                raise ValueError('Incorrect password')
+
+            for chunk in chunks:
+                yield decrypt(chunk)
+
+        def _read_data_descriptor():
+            dd_optional_signature = get_num(4)
+            dd_so_far_num = \
+                0 if dd_optional_signature == b'PK\x07\x08' else \
+                4
+            dd_so_far = dd_optional_signature[:dd_so_far_num]
+            dd_remaining = \
+                (20 - dd_so_far_num) if is_zip64 else \
+                (12 - dd_so_far_num)
+            dd = dd_so_far + get_num(dd_remaining)
+            crc_32_expected, = Struct('<I').unpack(dd[:4])
+            return crc_32_expected
 
         def _decompress_deflate(chunks):
             nonlocal crc_32_expected
@@ -142,31 +189,29 @@ def stream_unzip(zipfile_chunks, chunk_size=65536):
             return_unused(dobj.unused_data)
 
             if has_data_descriptor:
-                dd_optional_signature = get_num(4)
-                dd_so_far_num = \
-                    0 if dd_optional_signature == b'PK\x07\x08' else \
-                    4
-                dd_so_far = dd_optional_signature[:dd_so_far_num]
-                dd_remaining = \
-                    (20 - dd_so_far_num) if is_zip64 else \
-                    (12 - dd_so_far_num)
-                dd = dd_so_far + get_num(dd_remaining)
-                crc_32_expected, = Struct('<I').unpack(dd[:4])
+                crc_32_expected = _read_data_descriptor()
 
             if crc_32_actual != crc_32_expected:
                 raise ValueError('CRC-32 does not match')
 
         def _with_crc_32_check(chunks):
+            nonlocal crc_32_expected
+
             crc_32_actual = zlib.crc32(b'')
             for chunk in chunks:
                 crc_32_actual = zlib.crc32(chunk, crc_32_actual)
                 yield chunk
 
+            if has_data_descriptor:
+                crc_32_expected = _read_data_descriptor()
+
             if crc_32_actual != crc_32_expected:
                 raise ValueError('CRC-32 does not match')
 
         uncompressed_bytes = \
+            _with_crc_32_check(decrypt(get_num(12), yield_num(compressed_size - 12))) if compression == 0 and is_weak_encrypted else \
             _with_crc_32_check(yield_num(compressed_size)) if compression == 0 else \
+            _decompress_deflate(decrypt(get_num(12), yield_num(compressed_size - 12))) if compressed_size != 0 and is_weak_encrypted else \
             _decompress_deflate(yield_num(compressed_size)) if compressed_size != 0 else \
             _decompress_deflate(yield_all())
 
