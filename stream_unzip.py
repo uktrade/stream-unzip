@@ -165,6 +165,7 @@ def stream_unzip(zipfile_chunks, chunk_size=65536):
 
         uncompressed_bytes = \
             _with_crc_32_check(yield_num(compressed_size)) if compression == 0 else \
+            _decompress_deflate(yield_num(compressed_size)) if compression == 1 and compressed_size != 0 else \
             _decompress_deflate(yield_all())
 
         return file_name, uncompressed_size, uncompressed_bytes
