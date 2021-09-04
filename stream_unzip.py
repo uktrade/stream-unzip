@@ -114,16 +114,15 @@ def stream_unzip(zipfile_chunks, chunk_size=65536):
         if has_data_descriptor:
             uncompressed_size = None
 
-        def _decompress_deflate():
+        def _decompress_deflate(chunks):
             nonlocal crc_32_expected
 
             dobj = zlib.decompressobj(wbits=-zlib.MAX_WBITS)
             crc_32_actual = zlib.crc32(b'')
-            all_iter = yield_all()
 
             while not dobj.eof:
                 try:
-                    compressed_chunk = next(all_iter)
+                    compressed_chunk = next(chunks)
                 except StopIteration:
                     raise ValueError('Fewer bytes than expected in zip') from None
 
@@ -166,7 +165,7 @@ def stream_unzip(zipfile_chunks, chunk_size=65536):
 
         uncompressed_bytes = \
             _with_crc_32_check(yield_num(compressed_size)) if compression == 0 else \
-            _decompress_deflate()
+            _decompress_deflate(yield_all())
 
         return file_name, uncompressed_size, uncompressed_bytes
 
