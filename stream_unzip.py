@@ -149,7 +149,7 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
             for chunk in chunks:
                 yield decrypt(chunk)
 
-        def _decompress_deflate(chunks):
+        def decompress(chunks):
             dobj = zlib.decompressobj(wbits=-zlib.MAX_WBITS)
 
             while not dobj.eof:
@@ -185,7 +185,7 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
         def _get_crc_32_expected_from_file_header():
             return crc_32_expected
 
-        def _with_crc_32_check(chunks):
+        def with_crc_32_check(chunks):
             crc_32_actual = zlib.crc32(b'')
             for chunk in chunks:
                 crc_32_actual = zlib.crc32(chunk, crc_32_actual)
@@ -208,10 +208,10 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
             decrypt(get_num(12), encrypted_bytes) if is_weak_encrypted else \
             encrypted_bytes
         decompressed_bytes = \
-            _decompress_deflate(decrypted_bytes) if compression == 8 else \
+            decompress(decrypted_bytes) if compression == 8 else \
             decrypted_bytes
 
-        return file_name, uncompressed_size, _with_crc_32_check(decompressed_bytes)
+        return file_name, uncompressed_size, with_crc_32_check(decompressed_bytes)
 
     while True:
         signature = get_num(len(local_file_header_signature))
