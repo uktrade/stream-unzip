@@ -15,13 +15,13 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
         # - _get_num: returns a single `bytes` of a given length
         # - _return_unused: puts "unused" bytes "back", to be retrieved by a yield/get call
 
+        prev_chunk = b''
         chunk = b''
         offset = 0
         it = iter(iterable)
 
         def _yield_all():
-            nonlocal chunk
-            nonlocal offset
+            nonlocal prev_chunk, chunk, offset
 
             while True:
                 if not chunk:
@@ -37,8 +37,7 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
                 yield prev_chunk[prev_offset:prev_offset + to_yield]
 
         def _yield_num(num):
-            nonlocal chunk
-            nonlocal offset
+            nonlocal prev_chunk, chunk, offset
 
             while num:
                 if not chunk:
@@ -57,13 +56,13 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
         def _get_num(num):
             return b''.join(chunk for chunk in _yield_num(num))
 
-        def _return_unused(unused):
-            nonlocal chunk
-            nonlocal offset
-            if len(unused) <= offset:
-                offset -= len(unused)
+        def _return_unused(num_unused):
+            nonlocal chunk, offset
+
+            if num_unused <= offset:
+                offset -= num_unused
             else:
-                chunk = unused + chunk[offset:]
+                chunk = prev_chunk[-num_unused:] + chunk[offset:]
                 offset = 0
 
         return _yield_all, _yield_num, _get_num, _return_unused
@@ -168,7 +167,7 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
                     if uncompressed_chunk:
                         yield uncompressed_chunk
 
-            return_unused(dobj.unused_data)
+            return_unused(len(dobj.unused_data))
 
         def _get_crc_32_expected_from_data_descriptor():
             dd_optional_signature = get_num(4)
