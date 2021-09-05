@@ -67,53 +67,24 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
 
         return _yield_all, _yield_num, _get_num, _return_unused
 
-    yield_all, yield_num, get_num, return_unused = get_byte_readers(zipfile_chunks)
+    def yield_file(yield_all, yield_num, get_num, return_unused):
 
-    def get_extra_data(extra, desired_signature):
-        extra_offset = 0
-        while extra_offset != len(extra):
-            extra_signature = extra[extra_offset:extra_offset+2]
-            extra_offset += 2
-            extra_data_size, = Struct('<H').unpack(extra[extra_offset:extra_offset+2])
-            extra_offset += 2
-            extra_data = extra[extra_offset:extra_offset+extra_data_size]
-            extra_offset += extra_data_size
-            if extra_signature == desired_signature:
-                return extra_data
-
-    def yield_file():
-        version, flags, compression, mod_time, mod_date, crc_32_expected, compressed_size, uncompressed_size, file_name_len, extra_field_len = \
-            local_file_header_struct.unpack(get_num(local_file_header_struct.size))
-
-        if compression not in [0, 8]:
-            raise ValueError('Unsupported compression type {}'.format(compression))
-
-        def _flag_bits():
+        def get_flag_bits(flags):
             for b in flags:
                 for i in range(8):
                     yield (b >> i) & 1
 
-        flag_bits = tuple(_flag_bits())
-        if (
-            flag_bits[4]      # Enhanced deflate (Deflate64)
-            or flag_bits[5]   # Compressed patched
-            or flag_bits[6]   # Strong encrypted
-            or flag_bits[13]  # Masked header values
-        ):
-            raise ValueError('Unsupported flags {}'.format(flag_bits))
-
-        file_name = get_num(file_name_len)
-        extra = get_num(extra_field_len)
-
-        is_zip64 = compressed_size == zip64_compressed_size and uncompressed_size == zip64_compressed_size
-        if is_zip64:
-            uncompressed_size, compressed_size = Struct('<QQ').unpack(get_extra_data(extra, zip64_size_signature))
-
-        is_weak_encrypted = flag_bits[0]
-        has_data_descriptor = flag_bits[3]
-
-        if has_data_descriptor:
-            uncompressed_size = None
+        def get_extra_data(extra, desired_signature):
+            extra_offset = 0
+            while extra_offset != len(extra):
+                extra_signature = extra[extra_offset:extra_offset+2]
+                extra_offset += 2
+                extra_data_size, = Struct('<H').unpack(extra[extra_offset:extra_offset+2])
+                extra_offset += 2
+                extra_data = extra[extra_offset:extra_offset+extra_data_size]
+                extra_offset += extra_data_size
+                if extra_signature == desired_signature:
+                    return extra_data
 
         def decrypt(first_12, chunks):
             key_0 = 305419896
@@ -169,34 +140,64 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
 
             return_unused(len(dobj.unused_data))
 
-        def _get_crc_32_expected_from_data_descriptor():
-            dd_optional_signature = get_num(4)
-            dd_so_far_num = \
-                0 if dd_optional_signature == b'PK\x07\x08' else \
-                4
-            dd_so_far = dd_optional_signature[:dd_so_far_num]
-            dd_remaining = \
-                (20 - dd_so_far_num) if is_zip64 else \
-                (12 - dd_so_far_num)
-            dd = dd_so_far + get_num(dd_remaining)
-            crc_32_expected, = Struct('<I').unpack(dd[:4])
-            return crc_32_expected
+        def with_crc_32_check(is_zip64, chunks):
 
-        def _get_crc_32_expected_from_file_header():
-            return crc_32_expected
+            def _get_crc_32_expected_from_data_descriptor():
+                dd_optional_signature = get_num(4)
+                dd_so_far_num = \
+                    0 if dd_optional_signature == b'PK\x07\x08' else \
+                    4
+                dd_so_far = dd_optional_signature[:dd_so_far_num]
+                dd_remaining = \
+                    (20 - dd_so_far_num) if is_zip64 else \
+                    (12 - dd_so_far_num)
+                dd = dd_so_far + get_num(dd_remaining)
+                crc_32_expected, = Struct('<I').unpack(dd[:4])
+                return crc_32_expected
 
-        def with_crc_32_check(chunks):
+            def _get_crc_32_expected_from_file_header():
+                return crc_32_expected
+
             crc_32_actual = zlib.crc32(b'')
             for chunk in chunks:
                 crc_32_actual = zlib.crc32(chunk, crc_32_actual)
                 yield chunk
 
-            crc_32_expected = \
-                _get_crc_32_expected_from_data_descriptor() if has_data_descriptor else \
-                _get_crc_32_expected_from_file_header()
+            get_crc_32_expected = \
+                _get_crc_32_expected_from_data_descriptor if has_data_descriptor else \
+                _get_crc_32_expected_from_file_header
 
-            if crc_32_actual != crc_32_expected:
+            if crc_32_actual != get_crc_32_expected():
                 raise ValueError('CRC-32 does not match')
+
+        version, flags, compression, mod_time, mod_date, crc_32_expected, compressed_size, uncompressed_size, file_name_len, extra_field_len = \
+            local_file_header_struct.unpack(get_num(local_file_header_struct.size))
+
+        if compression not in [0, 8]:
+            raise ValueError('Unsupported compression type {}'.format(compression))
+
+        flag_bits = tuple(get_flag_bits(flags))
+        if (
+            flag_bits[4]      # Enhanced deflate (Deflate64)
+            or flag_bits[5]   # Compressed patched
+            or flag_bits[6]   # Strong encrypted
+            or flag_bits[13]  # Masked header values
+        ):
+            raise ValueError('Unsupported flags {}'.format(flag_bits))
+
+        is_weak_encrypted = flag_bits[0]
+        has_data_descriptor = flag_bits[3]
+
+        file_name = get_num(file_name_len)
+        extra = get_num(extra_field_len)
+
+        is_zip64 = compressed_size == zip64_compressed_size and uncompressed_size == zip64_compressed_size
+        uncompressed_size, compressed_size = \
+            Struct('<QQ').unpack(get_extra_data(extra, zip64_size_signature)) if is_zip64 else \
+            (uncompressed_size, compressed_size)
+        uncompressed_size = \
+            None if has_data_descriptor else \
+            uncompressed_size
 
         encryption_header = \
             12 if is_weak_encrypted else \
@@ -211,12 +212,14 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
             decompress(decrypted_bytes) if compression == 8 else \
             decrypted_bytes
 
-        return file_name, uncompressed_size, with_crc_32_check(decompressed_bytes)
+        return file_name, uncompressed_size, with_crc_32_check(is_zip64, decompressed_bytes)
+
+    yield_all, yield_num, get_num, return_unused = get_byte_readers(zipfile_chunks)
 
     while True:
         signature = get_num(len(local_file_header_signature))
         if signature == local_file_header_signature:
-            yield yield_file()
+            yield yield_file(yield_all, yield_num, get_num, return_unused)
         elif signature == central_directory_signature:
             for _ in yield_all():
                 pass
