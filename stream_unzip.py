@@ -164,8 +164,6 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
             return crc_32_expected
 
         def _decompress_deflate(chunks):
-            nonlocal crc_32_expected
-
             dobj = zlib.decompressobj(wbits=-zlib.MAX_WBITS)
 
             while not dobj.eof:
