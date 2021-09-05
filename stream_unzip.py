@@ -102,9 +102,6 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
                 key_1 = ((key_1 * 134775813) + 1) & 0xFFFFFFFF
                 key_2 = crc32(key_1 >> 24, key_2)
 
-            for byte in password:
-                update_keys(byte)
-
             def decrypt(chunk):
                 chunk = bytearray(chunk)
                 for i, byte in enumerate(chunk):
@@ -113,6 +110,9 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
                     update_keys(byte)
                     chunk[i] = byte
                 return chunk
+
+            for byte in password:
+                update_keys(byte)
 
             if decrypt(first_12)[11] != mod_time >> 8:
                 raise ValueError('Incorrect password')
