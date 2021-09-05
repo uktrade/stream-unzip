@@ -198,14 +198,20 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
             if crc_32_actual != crc_32_expected:
                 raise ValueError('CRC-32 does not match')
 
-        uncompressed_bytes = \
-            decrypt(get_num(12), yield_num(compressed_size - 12)) if compression == 0 and is_weak_encrypted else \
-            yield_num(compressed_size) if compression == 0 else \
-            _decompress_deflate(decrypt(get_num(12), yield_num(compressed_size - 12))) if compressed_size != 0 and is_weak_encrypted else \
-            _decompress_deflate(yield_num(compressed_size)) if compressed_size != 0 else \
-            _decompress_deflate(yield_all())
+        encryption_header = \
+            12 if is_weak_encrypted else \
+            0
+        encrypted_bytes = \
+            yield_num(compressed_size - encryption_header) if compression == 0 else \
+            yield_all()
+        decrypted_bytes = \
+            decrypt(get_num(12), encrypted_bytes) if is_weak_encrypted else \
+            encrypted_bytes
+        decompressed_bytes = \
+            _decompress_deflate(decrypted_bytes) if compression == 8 else \
+            decrypted_bytes
 
-        return file_name, uncompressed_size, _with_crc_32_check(uncompressed_bytes)
+        return file_name, uncompressed_size, _with_crc_32_check(decompressed_bytes)
 
     while True:
         signature = get_num(len(local_file_header_signature))

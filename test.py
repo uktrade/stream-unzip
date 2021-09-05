@@ -327,3 +327,20 @@ class TestStreamUnzip(unittest.TestCase):
         with self.assertRaises(ValueError):
             for name, size, chunks in stream_unzip(yield_input(), password=b'bad-password'):
                 next(chunks)
+
+    def test_password_protected_file_data_descriptor_correct_password(self):
+        def yield_input():
+            with open('fixtures/macos_10_14_5_password_data_descriptor.zip', 'rb') as f:
+                while True:
+                    chunk = f.read(4)
+                    if not chunk:
+                        break
+                    yield chunk
+
+        files = [
+            (name, size, b''.join(chunks))
+            for name, size, chunks in stream_unzip(yield_input(), password=b'password')
+        ]
+        self.assertEqual(files, [
+            (b'-', None, b'Some encrypted content to be compressed. Yes, compressed.'),
+        ])
