@@ -150,19 +150,6 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
             for chunk in chunks:
                 yield decrypt(chunk)
 
-        def _read_data_descriptor():
-            dd_optional_signature = get_num(4)
-            dd_so_far_num = \
-                0 if dd_optional_signature == b'PK\x07\x08' else \
-                4
-            dd_so_far = dd_optional_signature[:dd_so_far_num]
-            dd_remaining = \
-                (20 - dd_so_far_num) if is_zip64 else \
-                (12 - dd_so_far_num)
-            dd = dd_so_far + get_num(dd_remaining)
-            crc_32_expected, = Struct('<I').unpack(dd[:4])
-            return crc_32_expected
-
         def _decompress_deflate(chunks):
             dobj = zlib.decompressobj(wbits=-zlib.MAX_WBITS)
 
@@ -182,6 +169,19 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
                         yield uncompressed_chunk
 
             return_unused(dobj.unused_data)
+
+        def _read_data_descriptor():
+            dd_optional_signature = get_num(4)
+            dd_so_far_num = \
+                0 if dd_optional_signature == b'PK\x07\x08' else \
+                4
+            dd_so_far = dd_optional_signature[:dd_so_far_num]
+            dd_remaining = \
+                (20 - dd_so_far_num) if is_zip64 else \
+                (12 - dd_so_far_num)
+            dd = dd_so_far + get_num(dd_remaining)
+            crc_32_expected, = Struct('<I').unpack(dd[:4])
+            return crc_32_expected
 
         def _with_crc_32_check(chunks):
             nonlocal crc_32_expected
