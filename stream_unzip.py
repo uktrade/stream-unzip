@@ -170,7 +170,7 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
 
             return_unused(dobj.unused_data)
 
-        def _read_data_descriptor():
+        def _get_crc_32_expected_from_data_descriptor():
             dd_optional_signature = get_num(4)
             dd_so_far_num = \
                 0 if dd_optional_signature == b'PK\x07\x08' else \
@@ -183,16 +183,18 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
             crc_32_expected, = Struct('<I').unpack(dd[:4])
             return crc_32_expected
 
-        def _with_crc_32_check(chunks):
-            nonlocal crc_32_expected
+        def _get_crc_32_expected_from_file_header():
+            return crc_32_expected
 
+        def _with_crc_32_check(chunks):
             crc_32_actual = zlib.crc32(b'')
             for chunk in chunks:
                 crc_32_actual = zlib.crc32(chunk, crc_32_actual)
                 yield chunk
 
-            if has_data_descriptor:
-                crc_32_expected = _read_data_descriptor()
+            crc_32_expected = \
+                _get_crc_32_expected_from_data_descriptor() if has_data_descriptor else \
+                _get_crc_32_expected_from_file_header()
 
             if crc_32_actual != crc_32_expected:
                 raise ValueError('CRC-32 does not match')
