@@ -86,7 +86,7 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
                 if extra_signature == desired_signature:
                     return extra_data
 
-        def decrypt(first_12, chunks):
+        def decrypt(chunks):
             key_0 = 305419896
             key_1 = 591751049
             key_2 = 878082192
@@ -111,13 +111,15 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
                     chunk[i] = byte
                 return chunk
 
+            yield_all, _, get_num, _ = get_byte_readers(chunks)
+
             for byte in password:
                 update_keys(byte)
 
-            if decrypt(first_12)[11] != mod_time >> 8:
+            if decrypt(get_num(12))[11] != mod_time >> 8:
                 raise ValueError('Incorrect password')
 
-            for chunk in chunks:
+            for chunk in yield_all():
                 yield decrypt(chunk)
 
         def decompress(chunks):
@@ -199,14 +201,11 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
             None if has_data_descriptor else \
             uncompressed_size
 
-        encryption_header = \
-            12 if is_weak_encrypted else \
-            0
         encrypted_bytes = \
-            yield_num(compressed_size - encryption_header) if compression == 0 else \
+            yield_num(compressed_size) if compression == 0 else \
             yield_all()
         decrypted_bytes = \
-            decrypt(get_num(12), encrypted_bytes) if is_weak_encrypted else \
+            decrypt(encrypted_bytes) if is_weak_encrypted else \
             encrypted_bytes
         decompressed_bytes = \
             decompress(decrypted_bytes) if compression == 8 else \
