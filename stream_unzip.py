@@ -167,7 +167,6 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
             nonlocal crc_32_expected
 
             dobj = zlib.decompressobj(wbits=-zlib.MAX_WBITS)
-            crc_32_actual = zlib.crc32(b'')
 
             while not dobj.eof:
                 try:
@@ -177,22 +176,14 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
 
                 uncompressed_chunk = dobj.decompress(compressed_chunk, chunk_size)
                 if uncompressed_chunk:
-                    crc_32_actual = zlib.crc32(uncompressed_chunk, crc_32_actual)
                     yield uncompressed_chunk
 
                 while dobj.unconsumed_tail and not dobj.eof:
                     uncompressed_chunk = dobj.decompress(dobj.unconsumed_tail, chunk_size)
                     if uncompressed_chunk:
-                        crc_32_actual = zlib.crc32(uncompressed_chunk, crc_32_actual)
                         yield uncompressed_chunk
 
             return_unused(dobj.unused_data)
-
-            if has_data_descriptor:
-                crc_32_expected = _read_data_descriptor()
-
-            if crc_32_actual != crc_32_expected:
-                raise ValueError('CRC-32 does not match')
 
         def _with_crc_32_check(chunks):
             nonlocal crc_32_expected
@@ -211,9 +202,9 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
         uncompressed_bytes = \
             _with_crc_32_check(decrypt(get_num(12), yield_num(compressed_size - 12))) if compression == 0 and is_weak_encrypted else \
             _with_crc_32_check(yield_num(compressed_size)) if compression == 0 else \
-            _decompress_deflate(decrypt(get_num(12), yield_num(compressed_size - 12))) if compressed_size != 0 and is_weak_encrypted else \
-            _decompress_deflate(yield_num(compressed_size)) if compressed_size != 0 else \
-            _decompress_deflate(yield_all())
+            _with_crc_32_check(_decompress_deflate(decrypt(get_num(12), yield_num(compressed_size - 12)))) if compressed_size != 0 and is_weak_encrypted else \
+            _with_crc_32_check(_decompress_deflate(yield_num(compressed_size))) if compressed_size != 0 else \
+            _with_crc_32_check(_decompress_deflate(yield_all()))
 
         return file_name, uncompressed_size, uncompressed_bytes
 
