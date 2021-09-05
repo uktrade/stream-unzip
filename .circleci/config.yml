@@ -58,8 +58,9 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Install coverage and reporter
+          name: Install dependencies, coverage, and reporter
           command: |
+            pip install -e .
             pip install coverage==5.5
             curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
             chmod +x ./cc-test-reporter
@@ -76,6 +77,10 @@ jobs:
       - image: python:3.9.4
     steps:
       - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            pip install -e .
       - run:
           name: Run tests
           command: |
