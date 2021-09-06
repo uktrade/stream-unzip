@@ -92,8 +92,7 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
             key_2 = 878082192
 
             def crc32(ch, crc):
-                crc = zlib.crc32(bytes([~ch & 0xFF]), crc)
-                return (~crc & 0xFF000000) + (crc & 0x00FFFFFF)
+                return ~zlib.crc32(bytes([ch]), ~crc) & 0xFFFFFFFF
 
             def update_keys(byte):
                 nonlocal key_0, key_1, key_2
