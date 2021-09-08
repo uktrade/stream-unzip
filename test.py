@@ -344,3 +344,20 @@ class TestStreamUnzip(unittest.TestCase):
         self.assertEqual(files, [
             (b'-', None, b'Some encrypted content to be compressed. Yes, compressed.'),
         ])
+
+    def test_password_protected_aes(self):
+        def yield_input():
+            with open('fixtures/7za_17_4_aes.zip', 'rb') as f:
+                while True:
+                    chunk = f.read(10)
+                    if not chunk:
+                        break
+                    yield chunk
+
+        files = [
+            (name, size, b''.join(chunks))
+            for name, size, chunks in stream_unzip(yield_input(), password=b'password')
+        ]
+        self.assertEqual(files, [
+            (b'content.txt', 384, b'Some content to be compressed and AES-encrypted\n' * 8),
+        ])

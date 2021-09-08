@@ -21,6 +21,9 @@ setuptools.setup(
         'Topic :: System :: Archiving :: Compression',
     ],
     python_requires='>=3.5.0',
+    install_requires=[
+        'pycryptodome>=3.10.1',
+    ],
     py_modules=[
         'stream_unzip',
     ],
