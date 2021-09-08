@@ -164,7 +164,6 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
 
         def no_decrypt_decompress(chunks, decompress, is_done, num_unused):
             for chunk in chunks:
-
                 yield from decompress(chunk)
                 if is_done():
                     break
