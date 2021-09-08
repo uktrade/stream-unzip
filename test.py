@@ -316,7 +316,7 @@ class TestStreamUnzip(unittest.TestCase):
         ]
         self.assertEqual(files, [
             (b'compressed.txt', None, b'Some content to be password protected\n' * 14),
-            (b'uncompressed.txt', None, b'Some content to be password protected'),
+            (b'uncompressed.txt', 37, b'Some content to be password protected'),
         ])
 
     def test_password_protected_file_bad_password(self):

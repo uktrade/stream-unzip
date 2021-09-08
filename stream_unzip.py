@@ -11,7 +11,6 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
     def get_byte_readers(iterable):
         # Return functions to return/"replace" bytes from/to the iterable
         # - _yield_all: yields chunks as they come up (often for a "body")
-        # - _yield_num: yields chunks as the come up, up to a fixed number of bytes
         # - _get_num: returns a single `bytes` of a given length
         # - _return_unused: puts "unused" bytes "back", to be retrieved by a yield/get call
 
@@ -65,9 +64,49 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
                 chunk = prev_chunk[-num_unused:] + chunk[offset:]
                 offset = 0
 
-        return _yield_all, _yield_num, _get_num, _return_unused
+        return _yield_all, _get_num, _return_unused
 
-    def yield_file(yield_all, yield_num, get_num, return_unused):
+    def get_dummy_decompressor(num_bytes):
+        num_decompressed = 0
+        num_unused = 0
+
+        def _decompress(compressed_chunk):
+            nonlocal num_decompressed, num_unused
+            to_yield = min(len(compressed_chunk), num_bytes - num_decompressed)
+            num_decompressed += to_yield
+            num_unused = len(compressed_chunk) - to_yield
+            yield compressed_chunk[:to_yield]
+
+        def _is_done():
+            return num_decompressed == num_bytes
+
+        def _num_unused():
+            return num_unused
+
+        return _decompress, _is_done, _num_unused
+
+    def get_deflate_decompressor():
+        dobj = zlib.decompressobj(wbits=-zlib.MAX_WBITS)
+
+        def _decompress(compressed_chunk):
+            uncompressed_chunk = dobj.decompress(compressed_chunk, chunk_size)
+            if uncompressed_chunk:
+                yield uncompressed_chunk
+
+            while dobj.unconsumed_tail and not dobj.eof:
+                uncompressed_chunk = dobj.decompress(dobj.unconsumed_tail, chunk_size)
+                if uncompressed_chunk:
+                    yield uncompressed_chunk
+
+        def _is_done():
+            return dobj.eof
+
+        def _num_unused():
+            return len(dobj.unused_data)
+
+        return _decompress, _is_done, _num_unused
+
+    def yield_file(yield_all, get_num, return_unused):
 
         def get_flag_bits(flags):
             for b in flags:
@@ -86,7 +125,7 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
                 if extra_signature == desired_signature:
                     return extra_data
 
-        def decrypt(chunks):
+        def decrypt_decompress(chunks, decompress, is_done, num_unused):
             key_0 = 305419896
             key_1 = 591751049
             key_2 = 878082192
@@ -110,36 +149,26 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
                     chunk[i] = byte
                 return chunk
 
-            yield_all, _, get_num, _ = get_byte_readers(chunks)
-
             for byte in password:
                 update_keys(byte)
 
             if decrypt(get_num(12))[11] != mod_time >> 8:
                 raise ValueError('Incorrect password')
 
-            for chunk in yield_all():
-                yield decrypt(chunk)
+            for chunk in chunks:
+                yield from decompress(decrypt(chunk))
+                if is_done():
+                    break
 
-        def decompress(chunks):
-            dobj = zlib.decompressobj(wbits=-zlib.MAX_WBITS)
+            return_unused(num_unused())
 
-            while not dobj.eof:
-                try:
-                    compressed_chunk = next(chunks)
-                except StopIteration:
-                    raise ValueError('Fewer bytes than expected in zip') from None
+        def no_decrypt_decompress(chunks, decompress, is_done, num_unused):
+            for chunk in chunks:
+                yield from decompress(chunk)
+                if is_done():
+                    break
 
-                uncompressed_chunk = dobj.decompress(compressed_chunk, chunk_size)
-                if uncompressed_chunk:
-                    yield uncompressed_chunk
-
-                while dobj.unconsumed_tail and not dobj.eof:
-                    uncompressed_chunk = dobj.decompress(dobj.unconsumed_tail, chunk_size)
-                    if uncompressed_chunk:
-                        yield uncompressed_chunk
-
-            return_unused(len(dobj.unused_data))
+            return_unused(num_unused())
 
         def with_crc_32_check(is_zip64, chunks):
 
@@ -197,27 +226,25 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
             Struct('<QQ').unpack(get_extra_data(extra, zip64_size_signature)) if is_zip64 else \
             (uncompressed_size, compressed_size)
         uncompressed_size = \
-            None if has_data_descriptor else \
+            None if has_data_descriptor and compression == 8 else \
             uncompressed_size
 
-        encrypted_bytes = \
-            yield_num(compressed_size) if compression == 0 else \
-            yield_all()
-        decrypted_bytes = \
-            decrypt(encrypted_bytes) if is_weak_encrypted else \
-            encrypted_bytes
+        decompressor = \
+            get_dummy_decompressor(uncompressed_size) if compression == 0 else \
+            get_deflate_decompressor()
+
         decompressed_bytes = \
-            decompress(decrypted_bytes) if compression == 8 else \
-            decrypted_bytes
+            decrypt_decompress(yield_all(), *decompressor) if is_weak_encrypted else \
+            no_decrypt_decompress(yield_all(), *decompressor)
 
         return file_name, uncompressed_size, with_crc_32_check(is_zip64, decompressed_bytes)
 
-    yield_all, yield_num, get_num, return_unused = get_byte_readers(zipfile_chunks)
+    yield_all, get_num, return_unused = get_byte_readers(zipfile_chunks)
 
     while True:
         signature = get_num(len(local_file_header_signature))
         if signature == local_file_header_signature:
-            yield yield_file(yield_all, yield_num, get_num, return_unused)
+            yield yield_file(yield_all, get_num, return_unused)
         elif signature == central_directory_signature:
             for _ in yield_all():
                 pass
