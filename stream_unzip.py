@@ -11,7 +11,6 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
     def get_byte_readers(iterable):
         # Return functions to return/"replace" bytes from/to the iterable
         # - _yield_all: yields chunks as they come up (often for a "body")
-        # - _yield_num: yields chunks as the come up, up to a fixed number of bytes
         # - _get_num: returns a single `bytes` of a given length
         # - _return_unused: puts "unused" bytes "back", to be retrieved by a yield/get call
 
@@ -65,7 +64,7 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
                 chunk = prev_chunk[-num_unused:] + chunk[offset:]
                 offset = 0
 
-        return _yield_all, _yield_num, _get_num, _return_unused
+        return _yield_all, _get_num, _return_unused
 
     def get_dummy_decompressor(num_bytes):
         num_decompressed = 0
@@ -107,7 +106,7 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
 
         return _decompress, _is_done, _num_unused
 
-    def yield_file(yield_all, yield_num, get_num, return_unused):
+    def yield_file(yield_all, get_num, return_unused):
 
         def get_flag_bits(flags):
             for b in flags:
@@ -241,12 +240,12 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
 
         return file_name, uncompressed_size, with_crc_32_check(is_zip64, decompressed_bytes)
 
-    yield_all, yield_num, get_num, return_unused = get_byte_readers(zipfile_chunks)
+    yield_all, get_num, return_unused = get_byte_readers(zipfile_chunks)
 
     while True:
         signature = get_num(len(local_file_header_signature))
         if signature == local_file_header_signature:
-            yield yield_file(yield_all, yield_num, get_num, return_unused)
+            yield yield_file(yield_all, get_num, return_unused)
         elif signature == central_directory_signature:
             for _ in yield_all():
                 pass
