@@ -67,6 +67,27 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
 
         return _yield_all, _yield_num, _get_num, _return_unused
 
+    def get_deflate_decompressor():
+        dobj = zlib.decompressobj(wbits=-zlib.MAX_WBITS)
+
+        def _decompress(compressed_chunk):
+            uncompressed_chunk = dobj.decompress(compressed_chunk, chunk_size)
+            if uncompressed_chunk:
+                yield uncompressed_chunk
+
+            while dobj.unconsumed_tail and not dobj.eof:
+                uncompressed_chunk = dobj.decompress(dobj.unconsumed_tail, chunk_size)
+                if uncompressed_chunk:
+                    yield uncompressed_chunk
+
+        def _is_done():
+            return dobj.eof
+
+        def _num_unused():
+            return len(dobj.unused_data)
+
+        return _decompress, _is_done, _num_unused
+
     def yield_file(yield_all, yield_num, get_num, return_unused):
 
         def get_flag_bits(flags):
@@ -122,24 +143,14 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
                 yield decrypt(chunk)
 
         def decompress(chunks):
-            dobj = zlib.decompressobj(wbits=-zlib.MAX_WBITS)
+            decompress, is_done, num_unused = get_deflate_decompressor()
 
-            while not dobj.eof:
-                try:
-                    compressed_chunk = next(chunks)
-                except StopIteration:
-                    raise ValueError('Fewer bytes than expected in zip') from None
+            for chunk in chunks:
+                yield from decompress(chunk)
+                if is_done():
+                    break
 
-                uncompressed_chunk = dobj.decompress(compressed_chunk, chunk_size)
-                if uncompressed_chunk:
-                    yield uncompressed_chunk
-
-                while dobj.unconsumed_tail and not dobj.eof:
-                    uncompressed_chunk = dobj.decompress(dobj.unconsumed_tail, chunk_size)
-                    if uncompressed_chunk:
-                        yield uncompressed_chunk
-
-            return_unused(len(dobj.unused_data))
+            return_unused(num_unused())
 
         def with_crc_32_check(is_zip64, chunks):
 
