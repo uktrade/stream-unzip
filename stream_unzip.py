@@ -113,17 +113,16 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
                 for i in range(8):
                     yield (b >> i) & 1
 
-        def get_extra_data(extra, desired_signature):
+        def parse_extra(extra):
             extra_offset = 0
-            while extra_offset != len(extra):
+            while extra_offset < len(extra):
                 extra_signature = extra[extra_offset:extra_offset+2]
                 extra_offset += 2
                 extra_data_size, = Struct('<H').unpack(extra[extra_offset:extra_offset+2])
                 extra_offset += 2
                 extra_data = extra[extra_offset:extra_offset+extra_data_size]
                 extra_offset += extra_data_size
-                if extra_signature == desired_signature:
-                    return extra_data
+                yield (extra_signature, extra_data)
 
         def decrypt_decompress(chunks, decompress, is_done, num_unused):
             key_0 = 305419896
@@ -203,6 +202,9 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
         version, flags, compression, mod_time, mod_date, crc_32_expected, compressed_size, uncompressed_size, file_name_len, extra_field_len = \
             local_file_header_struct.unpack(get_num(local_file_header_struct.size))
 
+        file_name = get_num(file_name_len)
+        extra = dict(parse_extra(get_num(extra_field_len)))
+
         if compression not in [0, 8]:
             raise ValueError('Unsupported compression type {}'.format(compression))
 
@@ -218,12 +220,9 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
         is_weak_encrypted = flag_bits[0]
         has_data_descriptor = flag_bits[3]
 
-        file_name = get_num(file_name_len)
-        extra = get_num(extra_field_len)
-
         is_zip64 = compressed_size == zip64_compressed_size and uncompressed_size == zip64_compressed_size
         uncompressed_size, compressed_size = \
-            Struct('<QQ').unpack(get_extra_data(extra, zip64_size_signature)) if is_zip64 else \
+            Struct('<QQ').unpack(extra[zip64_size_signature]) if is_zip64 else \
             (uncompressed_size, compressed_size)
         uncompressed_size = \
             None if has_data_descriptor and compression == 8 else \
