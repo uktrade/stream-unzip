@@ -8,7 +8,7 @@ def long_description():
 
 setuptools.setup(
     name='stream-unzip',
-    version='0.0.33',
+    version='0.0.34',
     author='Department for International Trade',
     author_email='sre@digital.trade.gov.uk',
     description='Python function to stream unzip all the files in a ZIP archive, without loading the entire ZIP file into memory or any of its uncompressed files',
