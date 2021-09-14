@@ -65,11 +65,11 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
         def _return_unused(num_unused):
             nonlocal chunk, offset
 
-            if num_unused <= offset:
-                offset -= num_unused
-            else:
-                chunk = prev_chunk[-num_unused:] + chunk[offset:]
-                offset = 0
+            if num_unused and not chunk:
+                chunk = prev_chunk
+                offset = len(chunk)
+
+            offset -= num_unused
 
         return _yield_all, _get_num, _return_unused
 
