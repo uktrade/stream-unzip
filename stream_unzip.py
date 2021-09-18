@@ -336,13 +336,10 @@ class UnsupportedFlagsError(UnsupportedFeatureError):
 class UnsupportedCompressionTypeError(UnsupportedFeatureError):
     pass
 
-class BadZipFileError(DataError):
+class TruncatedDataError(DataError):
     pass
 
-class TruncatedDataError(BadZipFileError):
-    pass
-
-class UnexpectedSignatureError(BadZipFileError):
+class UnexpectedSignatureError(DataError):
     pass
 
 class IntegrityError(DataError):

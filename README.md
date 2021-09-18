@@ -99,14 +99,10 @@ Exceptions raised by the source iterable are passed through `stream_unzip` uncha
 
           The CRC32 integrity check on decrypted and decompressed bytes failed.
 
-      - **BadZipFileError**
+      - **TruncatedDataError**
 
-        The bytes supplied don't seem to be a ZIP file.
+        The stream of bytes ended unexpectedly.
 
-        - **TruncatedDataError**
+      - **UnexpectedSignatureError**
 
-          The stream of bytes ended unexpectedly.
-
-        - **UnexpectedSignatureError**
-
-          Each section of a ZIP file starts with a _signature_, and an unexpected one was encountered.
+        Each section of a ZIP file starts with a _signature_, and an unexpected one was encountered.
