@@ -257,7 +257,7 @@ class TestStreamUnzip(unittest.TestCase):
 
         self.assertEqual(files, [(b'first.txt', 0, b'')])
 
-    def test_python_large(self):
+    def test_python_zip64(self):
         def yield_input():
             with open('fixtures/python38_zip64.zip', 'rb') as f:
                 while True:
@@ -323,9 +323,9 @@ class TestStreamUnzip(unittest.TestCase):
         self.assertEqual(sizes, [None, None])
         self.assertEqual(num_received_bytes, [5000000000, 19])
 
-    def test_password_protected_file_correct_password(self):
+    def test_infozip_password_protected_file_correct_password(self):
         def yield_input():
-            with open('fixtures/macos_10_14_5_password.zip', 'rb') as f:
+            with open('fixtures/infozip_3_0_password.zip', 'rb') as f:
                 while True:
                     chunk = f.read(4)
                     if not chunk:
@@ -341,18 +341,18 @@ class TestStreamUnzip(unittest.TestCase):
             (b'uncompressed.txt', 37, b'Some content to be password protected'),
         ])
 
-    def test_password_protected_file_bad_password(self):
+    def test_infozip_password_protected_file_bad_password(self):
         def yield_input():
-            with open('fixtures/macos_10_14_5_password.zip', 'rb') as f:
+            with open('fixtures/infozip_3_0_password.zip', 'rb') as f:
                 yield f.read()
 
         with self.assertRaises(ValueError):
             for name, size, chunks in stream_unzip(yield_input(), password=b'bad-password'):
                 next(chunks)
 
-    def test_password_protected_file_data_descriptor_correct_password(self):
+    def test_infozip_password_protected_file_data_descriptor_correct_password(self):
         def yield_input():
-            with open('fixtures/macos_10_14_5_password_data_descriptor.zip', 'rb') as f:
+            with open('fixtures/infozip_3_0_password_data_descriptor.zip', 'rb') as f:
                 while True:
                     chunk = f.read(4)
                     if not chunk:
@@ -367,7 +367,7 @@ class TestStreamUnzip(unittest.TestCase):
             (b'-', None, b'Some encrypted content to be compressed. Yes, compressed.'),
         ])
 
-    def test_password_protected_aes(self):
+    def test_7za_password_protected_aes(self):
         def yield_input(i):
             with open('fixtures/7za_17_4_aes.zip', 'rb') as f:
                 while True:
@@ -387,7 +387,7 @@ class TestStreamUnzip(unittest.TestCase):
                 (b'content.txt', 384, b'Some content to be compressed and AES-encrypted\n' * 8),
             ])
 
-    def test_password_protected_aes_data_descriptor(self):
+    def test_7za_password_protected_aes_data_descriptor(self):
         def yield_input(i):
             with open('fixtures/7za_17_4_aes_data_descriptor.zip', 'rb') as f:
                 while True:
@@ -407,7 +407,7 @@ class TestStreamUnzip(unittest.TestCase):
                 (b'', None, b'Some content to be compressed and AES-encrypted\n' * 1000),
             ])
 
-    def test_password_protected_aes_bad_password(self):
+    def test_7za_password_protected_aes_bad_password(self):
         def yield_input():
             with open('fixtures/7za_17_4_aes.zip', 'rb') as f:
                 yield f.read()
