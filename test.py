@@ -13,6 +13,8 @@ from stream_unzip import (
     UnexpectedSignatureError,
     HMACIntegrityError,
     CRC32IntegrityError,
+    MissingZipCryptoPasswordError,
+    MissingAESPasswordError,
     IncorrectZipCryptoPasswordError,
     IncorrectAESPasswordError,
     DeflateError,
@@ -384,6 +386,15 @@ class TestStreamUnzip(unittest.TestCase):
             (b'uncompressed.txt', 37, b'Some content to be password protected'),
         ])
 
+    def test_infozip_password_protected_file_no_password(self):
+        def yield_input():
+            with open('fixtures/infozip_3_0_password.zip', 'rb') as f:
+                yield f.read()
+
+        with self.assertRaises(MissingZipCryptoPasswordError):
+            for name, size, chunks in stream_unzip(yield_input()):
+                next(chunks)
+
     def test_infozip_password_protected_file_bad_password(self):
         def yield_input():
             with open('fixtures/infozip_3_0_password.zip', 'rb') as f:
@@ -460,6 +471,15 @@ class TestStreamUnzip(unittest.TestCase):
             self.assertEqual(files, [
                 (b'', None, b'Some content to be compressed and AES-encrypted\n' * 1000),
             ])
+
+    def test_7za_password_protected_aes_no_password(self):
+        def yield_input():
+            with open('fixtures/7za_17_4_aes.zip', 'rb') as f:
+                yield f.read()
+
+        with self.assertRaises(MissingAESPasswordError):
+            for name, size, chunks in stream_unzip(yield_input()):
+                next(chunks)
 
     def test_7za_password_protected_aes_bad_password(self):
         def yield_input():

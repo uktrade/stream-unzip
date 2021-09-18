@@ -260,6 +260,12 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
         is_aes_encrypted = flag_bits[0] and raw_compression == 99
         is_aes_2_encrypted = is_aes_encrypted and extra[aes_extra_signature][0:2] == b'\x02\x00'
 
+        if is_weak_encrypted and password is None:
+            raise MissingZipCryptoPasswordError()
+
+        if is_aes_encrypted and password is None:
+            raise MissingAESPasswordError()
+
         compression = \
             Struct('<H').unpack(extra[aes_extra_signature][5:7])[0] if is_aes_encrypted else \
             raw_compression
@@ -349,6 +355,15 @@ class CRC32IntegrityError(IntegrityError):
     pass
 
 class PasswordError(UnzipError):
+    pass
+
+class MissingPasswordError(UnzipError):
+    pass
+
+class MissingZipCryptoPasswordError(MissingPasswordError):
+    pass
+
+class MissingAESPasswordError(MissingPasswordError):
     pass
 
 class IncorrectPasswordError(PasswordError):
