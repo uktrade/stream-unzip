@@ -96,21 +96,19 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
     def get_deflate_decompressor():
         dobj = zlib.decompressobj(wbits=-zlib.MAX_WBITS)
 
-        def _decompress(compressed_chunk):
+        def _decompress_single(compressed_chunk):
             try:
-                uncompressed_chunk = dobj.decompress(compressed_chunk, chunk_size)
+                return dobj.decompress(compressed_chunk, chunk_size)
             except zlib.error as e:
                 raise DeflateError() from e
 
+        def _decompress(compressed_chunk):
+            uncompressed_chunk = _decompress_single(compressed_chunk)
             if uncompressed_chunk:
                 yield uncompressed_chunk
 
             while dobj.unconsumed_tail and not dobj.eof:
-                try:
-                    uncompressed_chunk = dobj.decompress(dobj.unconsumed_tail, chunk_size)
-                except zlib.error as e:
-                    raise DeflateError() from e
-
+                uncompressed_chunk = _decompress_single(dobj.unconsumed_tail)
                 if uncompressed_chunk:
                     yield uncompressed_chunk
 
