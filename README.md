@@ -75,10 +75,6 @@ Exceptions raised by the source iterable are passed through `stream_unzip` uncha
 
       An issue with the ZIP bytes themselves was encountered.
 
-      - **TruncatedDataError**
-
-        The stream of bytes ended unexpectedly.
-
       - **UnsupportedFeatureError**
 
         A file in the ZIP uses features that are unsupported.
@@ -106,6 +102,10 @@ Exceptions raised by the source iterable are passed through `stream_unzip` uncha
       - **BadZipFileError**
 
         The bytes supplied don't seem to be a ZIP file.
+
+        - **TruncatedDataError**
+
+          The stream of bytes ended unexpectedly.
 
         - **UnexpectedSignatureError**
 

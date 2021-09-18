@@ -321,9 +321,6 @@ class UnzipError(ValueError):
 class DataError(UnzipError):
     pass
 
-class TruncatedDataError(DataError):
-    pass
-
 class UncompressError(UnzipError):
     pass
 
@@ -340,6 +337,9 @@ class UnsupportedCompressionTypeError(UnsupportedFeatureError):
     pass
 
 class BadZipFileError(DataError):
+    pass
+
+class TruncatedDataError(BadZipFileError):
     pass
 
 class UnexpectedSignatureError(BadZipFileError):
