@@ -125,7 +125,7 @@ Exceptions raised by the source iterable are passed through `stream_unzip` uncha
 
       - **InvalidExtraError**
 
-        Metadata known as *extra* that some ZIP files require is present, long enough, but holds an invalid value
+        Metadata known as *extra* that some ZIP files require is present, long enough, but holds an invalid value.
 
         - **InvalidAESKeyLengthError**
 
