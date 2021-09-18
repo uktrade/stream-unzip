@@ -197,7 +197,7 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
             return_unused(num_unused())
 
             if get_num(10) != hmac.digest()[:10]:
-                raise ValueError('Invalid MAC')
+                raise ValueError('Invalid HMAC')
 
         def no_decrypt_decompress(chunks, decompress, is_done, num_unused):
             for chunk in chunks:
