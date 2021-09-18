@@ -177,6 +177,9 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
             return_unused(num_unused())
 
         def aes_decrypt_decompress(chunks, decompress, is_done, num_unused, aes_extra):
+            if aes_extra[4] not in (1, 2, 3):
+                raise InvalidAESKeyLengthError(aes_extra[4])
+
             key_length = {1: 16, 2: 24, 3: 32}[aes_extra[4]]
             salt_length = {1: 8, 2: 12, 3: 16}[aes_extra[4]]
             compression = aes_extra[5:7]
@@ -381,6 +384,12 @@ class TruncatedZip64ExtraError(TruncatedExtraError):
     pass
 
 class TruncatedAESExtraError(TruncatedExtraError):
+    pass
+
+class InvalidExtraError(TruncatedExtraError):
+    pass
+
+class InvalidAESKeyLengthError(TruncatedExtraError):
     pass
 
 class IntegrityError(DataError):
