@@ -176,8 +176,7 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
 
             return_unused(num_unused())
 
-        def aes_decrypt_decompress(chunks, decompress, is_done, num_unused):
-            aes_extra = extra[aes_extra_signature]
+        def aes_decrypt_decompress(chunks, decompress, is_done, num_unused, aes_extra):
             key_length = {1: 16, 2: 24, 3: 32}[aes_extra[4]]
             salt_length = {1: 8, 2: 12, 3: 16}[aes_extra[4]]
             compression = aes_extra[5:7]
@@ -258,7 +257,19 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
 
         is_weak_encrypted = flag_bits[0] and raw_compression != 99
         is_aes_encrypted = flag_bits[0] and raw_compression == 99
-        is_aes_2_encrypted = is_aes_encrypted and extra[aes_extra_signature][0:2] == b'\x02\x00'
+
+        if is_aes_encrypted:
+            try:
+                aes_extra = extra[aes_extra_signature]
+            except KeyError:
+                raise MissingAESExtaError()
+
+            if len(aes_extra) < 7:
+                raise TruncatedAESExtraError()
+        else:
+            aes_extra = None
+
+        is_aes_2_encrypted = is_aes_encrypted and aes_extra[0:2] == b'\x02\x00'
 
         if is_weak_encrypted and password is None:
             raise MissingZipCryptoPasswordError()
@@ -267,7 +278,7 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
             raise MissingAESPasswordError()
 
         compression = \
-            Struct('<H').unpack(extra[aes_extra_signature][5:7])[0] if is_aes_encrypted else \
+            Struct('<H').unpack(aes_extra[5:7])[0] if is_aes_encrypted else \
             raw_compression
 
         if compression not in (0, 8):
@@ -276,8 +287,20 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
         has_data_descriptor = flag_bits[3]
 
         is_zip64 = compressed_size == zip64_compressed_size and uncompressed_size == zip64_compressed_size
+
+        if is_zip64:
+            try:
+                zip64_extra = extra[zip64_size_signature]
+            except KeyError:
+                raise MissingZip64ExtraError()
+
+            if len(zip64_extra) < 16:
+                raise TruncatedZip64ExtraError()
+        else:
+            zip64_extra = None
+
         uncompressed_size, compressed_size = \
-            Struct('<QQ').unpack(extra[zip64_size_signature]) if is_zip64 else \
+            Struct('<QQ').unpack(zip64_extra) if is_zip64 else \
             (uncompressed_size, compressed_size)
         uncompressed_size = \
             None if has_data_descriptor and compression == 8 else \
@@ -289,7 +312,7 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
 
         decompressed_bytes = \
             weak_decrypt_decompress(yield_all(), *decompressor) if is_weak_encrypted else \
-            aes_decrypt_decompress(yield_all(), *decompressor) if is_aes_encrypted else \
+            aes_decrypt_decompress(yield_all(), *decompressor, aes_extra) if is_aes_encrypted else \
             no_decrypt_decompress(yield_all(), *decompressor)
 
         get_crc_32_expected = \
@@ -340,6 +363,24 @@ class TruncatedDataError(DataError):
     pass
 
 class UnexpectedSignatureError(DataError):
+    pass
+
+class MissingExtraError(DataError):
+    pass
+
+class MissingZip64ExtraError(MissingExtraError):
+    pass
+
+class MissingAESExtraError(MissingExtraError):
+    pass
+
+class TruncatedExtraError(DataError):
+    pass
+
+class TruncatedZip64ExtraError(TruncatedExtraError):
+    pass
+
+class TruncatedAESExtraError(TruncatedExtraError):
     pass
 
 class IntegrityError(DataError):

@@ -106,3 +106,19 @@ Exceptions raised by the source iterable are passed through `stream_unzip` uncha
       - **UnexpectedSignatureError**
 
         Each section of a ZIP file starts with a _signature_, and an unexpected one was encountered.
+
+      - **MissingExtraError**
+
+        Metadata known as *extra* that some ZIP files require is missing.
+
+        - **MissingZip64ExtraError**
+
+        - **MissingAESExtraError**
+
+      - **TruncatedExtraError**
+
+        Metadata known as *extra* that some ZIP files require is present, but too short.
+
+        - **TruncatedZip64ExtraError**
+
+        - **TruncatedAESExtraError**
