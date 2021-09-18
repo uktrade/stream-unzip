@@ -39,7 +39,7 @@ Exceptions raised by the source iterable are passed through `stream_unzip` uncha
 
 ### Hierarchy
 
-- **ValueError**
+- **ValueError** (built-in)
 
   - **UnzipError**
 
