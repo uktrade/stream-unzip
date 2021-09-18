@@ -31,3 +31,82 @@ for file_name, file_size, unzipped_chunks in stream_unzip(zipped_chunks(), passw
 ```
 
 The file name and file size are extracted as reported from the file. If you don't trust the creator of the ZIP file, these should be treated as untrusted input.
+
+
+## Exceptions
+
+Exceptions raised by the source iterable are passed through `stream_unzip` unchanged. Other exceptions derive from `UnzipError` which itself derives from Python's built-in `ValueError`.
+
+### Hierarchy
+
+- **ValueError**
+
+  - **UnzipError**
+
+    Base class for all explicitly-thrown exceptions
+
+    - **PasswordError**
+
+        - **MissingPasswordError**
+
+          A file requires a password, but it was not supplied.
+
+          - **MissingZipCryptoPasswordError**
+
+            A file is legacy (ZipCrypto/Zip 2.0) encrypted, but a password was not supplied.
+
+          - **MissingAESPasswordError**
+
+            A file is AES encrypted, but a password was not supplied.
+
+        - **IncorrectPasswordError**
+
+          An incorrect password was supplied. Note that due to nature of the ZIP file format, some incorrect passwords would not raise this exception, and instead raise a `DataError`, or even in pathalogical cases, not raise any exception.
+
+          - **IncorrectZipCryptoPasswordError**
+
+            An incorrect password was supplied for a legacy (ZipCrypto/Zip 2.0) encrypted file.
+
+          - **IncorrectAESPasswordError**
+
+            An incorrect password was supplied for an AES encrypted file.
+
+    - **DataError**
+
+      An issue with the ZIP bytes themselves was encountered.
+
+      - **TruncatedDataError**
+
+        The stream of bytes ended unexpectedly.
+
+      - **UnsupportedFeatureError**
+
+        A file in the ZIP uses features that are unsupported.
+
+        - **UnsupportedFlagsError**
+
+        - **UnsupportedCompressionTypeError**
+
+      - **UncompressError**
+
+        - **DeflateError**
+
+          An error in the deflate-compressed data meant it could not be decompressed.
+
+      - **IntegrityError**
+
+        - **HMACIntegrityError**
+
+          The HMAC integrity check on AES encrypted bytes failed
+
+        - **CRC32IntegrityError**
+
+          The CRC32 integrity check on decrypted and decompressed bytes failed.
+
+      - **BadZipFileError**
+
+        The bytes supplied don't seem to be a ZIP file.
+
+        - **UnexpectedSignatureError**
+
+          Each section of a ZIP file starts with a _signature_, and an unexpected one was encountered.
