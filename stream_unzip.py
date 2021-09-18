@@ -348,7 +348,10 @@ class HMACIntegrityError(IntegrityError):
 class CRC32IntegrityError(IntegrityError):
     pass
 
-class IncorrectPasswordError(UnzipError):
+class PasswordError(UnzipError):
+    pass
+
+class IncorrectPasswordError(PasswordError):
     pass
 
 class IncorrectZipCryptoPasswordError(IncorrectPasswordError):
