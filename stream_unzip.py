@@ -51,7 +51,7 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
                     try:
                         chunk = next(it)
                     except StopIteration:
-                        raise ValueError('Fewer bytes than expected in zip') from None
+                        raise TruncatedDataError() from None
                 prev_offset = offset
                 prev_chunk = chunk
                 to_yield = min(num, len(chunk) - offset, chunk_size)
@@ -160,12 +160,15 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
                 update_keys(byte)
 
             if decrypt(get_num(12))[11] != mod_time >> 8:
-                raise ValueError('Incorrect password')
+                raise IncorrectZipCryptoPasswordError()
 
             for chunk in chunks:
                 yield from decompress(decrypt(chunk))
                 if is_done():
                     break
+            else:
+                if not is_done():
+                    raise TruncatedDataError()
 
             return_unused(num_unused())
 
@@ -181,7 +184,7 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
 
             keys = PBKDF2(password, salt, 2 * key_length + password_verification_length, 1000)
             if keys[-2:] != password_verification:
-                raise ValueError('Incorrect password')
+                raise IncorrectAESPasswordError()
 
             decrypter = AES.new(
                 keys[:key_length], AES.MODE_CTR,
@@ -193,17 +196,23 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
                 hmac.update(chunk[:len(chunk) - num_unused()])
                 if is_done():
                     break
+            else:
+                if not is_done():
+                    raise TruncatedDataError()
 
             return_unused(num_unused())
 
             if get_num(10) != hmac.digest()[:10]:
-                raise ValueError('Invalid HMAC')
+                raise HMACIntegrityError()
 
         def no_decrypt_decompress(chunks, decompress, is_done, num_unused):
             for chunk in chunks:
                 yield from decompress(chunk)
                 if is_done():
                     break
+            else:
+                if not is_done():
+                    raise TruncatedDataError()
 
             return_unused(num_unused())
 
@@ -234,7 +243,7 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
                 yield chunk
 
             if crc_32_actual != get_crc_32_expected():
-                raise ValueError('CRC-32 does not match')
+                raise CRC32IntegrityError()
 
         version, flags, raw_compression, mod_time, mod_date, crc_32_expected, compressed_size, uncompressed_size, file_name_len, extra_field_len = \
             local_file_header_struct.unpack(get_num(local_file_header_struct.size))
@@ -249,7 +258,7 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
             or flag_bits[6]   # Strong encrypted
             or flag_bits[13]  # Masked header values
         ):
-            raise ValueError('Unsupported flags {}'.format(flag_bits))
+            raise UnsupportedFlagsError(flag_bits)
 
         is_weak_encrypted = flag_bits[0] and raw_compression != 99
         is_aes_encrypted = flag_bits[0] and raw_compression == 99
@@ -260,7 +269,7 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
             raw_compression
 
         if compression not in (0, 8):
-            raise ValueError('Unsupported compression type {}'.format(compression))
+            raise UnsupportedCompressionTypeError(compression)
 
         has_data_descriptor = flag_bits[3]
 
@@ -302,4 +311,43 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
                 pass
             break
         else:
-            raise ValueError(b'Unexpected signature ' + signature)
+            raise UnexpectedSignatureError(signature)
+
+class UnzipError(ValueError):
+    pass
+
+class DataError(UnzipError):
+    pass
+
+class TruncatedDataError(DataError):
+    pass
+
+class UnsupportedFeatureError(DataError):
+    pass
+
+class UnsupportedFlagsError(UnsupportedFeatureError):
+    pass
+
+class UnsupportedCompressionTypeError(UnsupportedFeatureError):
+    pass
+
+class UnexpectedSignatureError(DataError):
+    pass
+
+class IntegrityError(DataError):
+    pass
+
+class HMACIntegrityError(IntegrityError):
+    pass
+
+class CRC32IntegrityError(IntegrityError):
+    pass
+
+class IncorrectPasswordError(UnzipError):
+    pass
+
+class IncorrectZipCryptoPasswordError(IncorrectPasswordError):
+    pass
+
+class IncorrectAESPasswordError(IncorrectPasswordError):
+    pass
