@@ -387,6 +387,26 @@ class TestStreamUnzip(unittest.TestCase):
                 (b'content.txt', 384, b'Some content to be compressed and AES-encrypted\n' * 8),
             ])
 
+    def test_password_protected_aes_data_descriptor(self):
+        def yield_input(i):
+            with open('fixtures/7za_17_4_aes_data_descriptor.zip', 'rb') as f:
+                while True:
+                    chunk = f.read(i)
+                    if not chunk:
+                        break
+                    yield chunk
+
+        # AES has block sizes of 16 bytes, so try to make sure there
+        # isn't some subtle dependency on chunks being a multiple of that
+        for i in tuple(range(1, 17)) + (100000,):
+            files = [
+                (name, size, b''.join(chunks))
+                for name, size, chunks in stream_unzip(yield_input(i), password=b'password')
+            ]
+            self.assertEqual(files, [
+                (b'', None, b'Some content to be compressed and AES-encrypted\n' * 1000),
+            ])
+
     def test_password_protected_aes_bad_password(self):
         def yield_input():
             with open('fixtures/7za_17_4_aes.zip', 'rb') as f:

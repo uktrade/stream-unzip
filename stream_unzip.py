@@ -1,3 +1,4 @@
+from functools import partial
 from struct import Struct
 import zlib
 
@@ -209,32 +210,31 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
 
             return_unused(num_unused())
 
-        def with_crc_32_check(is_zip64, chunks):
+        def get_crc_32_expected_from_data_descriptor(is_zip64):
+            dd_optional_signature = get_num(4)
+            dd_so_far_num = \
+                0 if dd_optional_signature == b'PK\x07\x08' else \
+                4
+            dd_so_far = dd_optional_signature[:dd_so_far_num]
+            dd_remaining = \
+                (20 - dd_so_far_num) if is_zip64 else \
+                (12 - dd_so_far_num)
+            dd = dd_so_far + get_num(dd_remaining)
+            crc_32_expected, = Struct('<I').unpack(dd[:4])
+            return crc_32_expected
 
-            def _get_crc_32_expected_from_data_descriptor():
-                dd_optional_signature = get_num(4)
-                dd_so_far_num = \
-                    0 if dd_optional_signature == b'PK\x07\x08' else \
-                    4
-                dd_so_far = dd_optional_signature[:dd_so_far_num]
-                dd_remaining = \
-                    (20 - dd_so_far_num) if is_zip64 else \
-                    (12 - dd_so_far_num)
-                dd = dd_so_far + get_num(dd_remaining)
-                crc_32_expected, = Struct('<I').unpack(dd[:4])
-                return crc_32_expected
+        def get_crc_32_expected_from_file_header():
+            return crc_32_expected
 
-            def _get_crc_32_expected_from_file_header():
-                return crc_32_expected
+        def read_data_and_crc_32_ignore(get_crc_32_expected, chunks):
+            yield from chunks
+            get_crc_32_expected()
 
+        def read_data_and_crc_32_verify(get_crc_32_expected, chunks):
             crc_32_actual = zlib.crc32(b'')
             for chunk in chunks:
                 crc_32_actual = zlib.crc32(chunk, crc_32_actual)
                 yield chunk
-
-            get_crc_32_expected = \
-                _get_crc_32_expected_from_data_descriptor if has_data_descriptor else \
-                _get_crc_32_expected_from_file_header
 
             if crc_32_actual != get_crc_32_expected():
                 raise ValueError('CRC-32 does not match')
@@ -284,11 +284,15 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
             aes_decrypt_decompress(yield_all(), *decompressor) if is_aes_encrypted else \
             no_decrypt_decompress(yield_all(), *decompressor)
 
-        crc_checked_data = \
-            decompressed_bytes if is_aes_2_encrypted else \
-            with_crc_32_check(is_zip64, decompressed_bytes)
+        get_crc_32_expected = \
+            partial(get_crc_32_expected_from_data_descriptor, is_zip64) if has_data_descriptor else \
+            get_crc_32_expected_from_file_header
 
-        return file_name, uncompressed_size, crc_checked_data
+        crc_checked_bytes = \
+            read_data_and_crc_32_ignore(get_crc_32_expected, decompressed_bytes) if is_aes_2_encrypted else \
+            read_data_and_crc_32_verify(get_crc_32_expected, decompressed_bytes)
+
+        return file_name, uncompressed_size, crc_checked_bytes
 
     yield_all, get_num, return_unused = get_byte_readers(zipfile_chunks)
 
