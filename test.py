@@ -15,6 +15,7 @@ from stream_unzip import (
     CRC32IntegrityError,
     IncorrectZipCryptoPasswordError,
     IncorrectAESPasswordError,
+    DeflateError,
 )
 
 
@@ -154,6 +155,34 @@ class TestStreamUnzip(unittest.TestCase):
             with self.subTest(content=content[:5], method=method, input_size=input_size, output_size=output_size):
                 with self.assertRaises(CRC32IntegrityError):
                     for _, _, chunks in stream_unzip(yield_input(content, method, input_size), chunk_size=output_size):
+                        for _ in chunks:
+                            pass
+
+    def test_bad_deflate_data(self):
+        rnd = random.Random()
+        rnd.seed(1)
+
+        input_sizes = [1, 7, 65536]
+        output_sizes = [1, 7, 65536]
+
+        content = b''.join([uuid.UUID(int=rnd.getrandbits(128), version=4).hex.encode() for _ in range(0, 10000)])
+
+        def yield_input(input_size):
+            file = io.BytesIO()
+            with zipfile.ZipFile(file, 'w', zipfile.ZIP_DEFLATED) as zf:
+                zf.writestr('first.txt', content)
+
+            zip_bytes = file.getvalue()
+            zip_bytes = zip_bytes[0:500] + b'-' + zip_bytes[502:]
+
+            for i in range(0, len(zip_bytes), input_size):
+                yield zip_bytes[i:i + input_size]
+
+        combinations_iter = itertools.product(input_sizes, output_sizes)
+        for input_size, output_size in combinations_iter:
+            with self.subTest(input_size=input_size, output_size=output_size):
+                with self.assertRaises(DeflateError):
+                    for _, _, chunks in stream_unzip(yield_input(input_size), chunk_size=output_size):
                         for _ in chunks:
                             pass
 
