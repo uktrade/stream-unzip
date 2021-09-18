@@ -162,13 +162,12 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
             if decrypt(get_num(12))[11] != mod_time >> 8:
                 raise IncorrectZipCryptoPasswordError()
 
-            for chunk in chunks:
+            while not is_done():
+                try:
+                    chunk = next(chunks)
+                except StopIteration:
+                    raise TruncatedDataError from None
                 yield from decompress(decrypt(chunk))
-                if is_done():
-                    break
-            else:
-                if not is_done():
-                    raise TruncatedDataError()
 
             return_unused(num_unused())
 
@@ -191,14 +190,15 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
                 counter=Counter.new(nbits=128, little_endian=True)
             )
             hmac = HMAC.new(keys[key_length:key_length*2], digestmod=SHA1)
-            for chunk in chunks:
+
+            while not is_done():
+                try:
+                    chunk = next(chunks)
+                except StopIteration:
+                    raise TruncatedDataError from None
+
                 yield from decompress(decrypter.decrypt(chunk))
                 hmac.update(chunk[:len(chunk) - num_unused()])
-                if is_done():
-                    break
-            else:
-                if not is_done():
-                    raise TruncatedDataError()
 
             return_unused(num_unused())
 
@@ -206,13 +206,13 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
                 raise HMACIntegrityError()
 
         def no_decrypt_decompress(chunks, decompress, is_done, num_unused):
-            for chunk in chunks:
+            while not is_done():
+                try:
+                    chunk = next(chunks)
+                except StopIteration:
+                    raise TruncatedDataError from None
+
                 yield from decompress(chunk)
-                if is_done():
-                    break
-            else:
-                if not is_done():
-                    raise TruncatedDataError()
 
             return_unused(num_unused())
 
