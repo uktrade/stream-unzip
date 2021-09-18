@@ -257,6 +257,10 @@ class TestStreamUnzip(unittest.TestCase):
 
         self.assertEqual(files, [(b'first.txt', 0, b'')])
 
+    def test_not_zip(self):
+        with self.assertRaises(ValueError):
+            next(stream_unzip([b'This is not a zip file']))
+
     def test_python_zip64(self):
         def yield_input():
             with open('fixtures/python38_zip64.zip', 'rb') as f:
