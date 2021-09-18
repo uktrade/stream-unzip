@@ -415,3 +415,11 @@ class TestStreamUnzip(unittest.TestCase):
         with self.assertRaises(ValueError):
             for name, size, chunks in stream_unzip(yield_input(), password=b'not-password'):
                 next(chunks)
+
+    def test_7za_deflate64_not_supported(self):
+        def yield_input():
+            with open('fixtures/7za_17_4_deflate64.zip', 'rb') as f:
+                yield f.read()
+
+        with self.assertRaisesRegex(ValueError, 'Unsupported compression type 9'):
+            next(stream_unzip(yield_input()))
