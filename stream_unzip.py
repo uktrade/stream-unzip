@@ -16,6 +16,12 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
     aes_extra_signature = b'\x01\x99'
     central_directory_signature = b'\x50\x4b\x01\x02'
 
+    def next_or_truncated_error(it):
+        try:
+            return next(it)
+        except StopIteration:
+            raise TruncatedDataError from None
+
     def get_byte_readers(iterable):
         # Return functions to return/"replace" bytes from/to the iterable
         # - _yield_all: yields chunks as they come up (often for a "body")
@@ -48,10 +54,7 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
 
             while num:
                 if not chunk:
-                    try:
-                        chunk = next(it)
-                    except StopIteration:
-                        raise TruncatedDataError() from None
+                    chunk = next_or_truncated_error(it)
                 prev_offset = offset
                 prev_chunk = chunk
                 to_yield = min(num, len(chunk) - offset, chunk_size)
@@ -169,11 +172,7 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
                 raise IncorrectZipCryptoPasswordError()
 
             while not is_done():
-                try:
-                    chunk = next(chunks)
-                except StopIteration:
-                    raise TruncatedDataError() from None
-                yield from decompress(decrypt(chunk))
+                yield from decompress(decrypt(next_or_truncated_error(chunks)))
 
             return_unused(num_unused())
 
@@ -198,11 +197,7 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
             hmac = HMAC.new(keys[key_length:key_length*2], digestmod=SHA1)
 
             while not is_done():
-                try:
-                    chunk = next(chunks)
-                except StopIteration:
-                    raise TruncatedDataError() from None
-
+                chunk = next_or_truncated_error(chunks)
                 yield from decompress(decrypter.decrypt(chunk))
                 hmac.update(chunk[:len(chunk) - num_unused()])
 
@@ -213,12 +208,7 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
 
         def no_decrypt_decompress(chunks, decompress, is_done, num_unused):
             while not is_done():
-                try:
-                    chunk = next(chunks)
-                except StopIteration:
-                    raise TruncatedDataError() from None
-
-                yield from decompress(chunk)
+                yield from decompress(next_or_truncated_error(chunks))
 
             return_unused(num_unused())
 
