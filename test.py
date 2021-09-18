@@ -391,6 +391,17 @@ class TestStreamUnzip(unittest.TestCase):
                 (b'content.txt', 384, b'Some content to be compressed and AES-encrypted\n' * 8),
             ])
 
+    def test_7za_password_protected_aes_bad_hmac(self):
+        def yield_input():
+            with open('fixtures/7za_17_4_aes.zip', 'rb') as f:
+                data = f.read()
+                yield data[0:130] + b'-' + data[132:]
+
+        with self.assertRaisesRegex(ValueError, 'Invalid HMAC'):
+            for name, size, chunks in stream_unzip(yield_input(), password=b'password'):
+                for chunk in chunks:
+                    pass
+
     def test_7za_password_protected_aes_data_descriptor(self):
         def yield_input(i):
             with open('fixtures/7za_17_4_aes_data_descriptor.zip', 'rb') as f:
