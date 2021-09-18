@@ -333,7 +333,10 @@ class UnsupportedFlagsError(UnsupportedFeatureError):
 class UnsupportedCompressionTypeError(UnsupportedFeatureError):
     pass
 
-class UnexpectedSignatureError(DataError):
+class BadZipFileFileError(DataError):
+    pass
+
+class UnexpectedSignatureError(BadZipFileFileError):
     pass
 
 class IntegrityError(DataError):
