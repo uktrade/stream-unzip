@@ -2,6 +2,7 @@ import itertools
 import io
 import unittest
 import uuid
+import random
 import zipfile
 
 from stream_unzip import stream_unzip
@@ -10,13 +11,16 @@ from stream_unzip import stream_unzip
 class TestStreamUnzip(unittest.TestCase):
 
     def test_methods_and_chunk_sizes(self):
+        rnd = random.Random()
+        rnd.seed(1)
+
         methods = [zipfile.ZIP_DEFLATED, zipfile.ZIP_STORED]
         input_sizes = [1, 7, 65536]
         output_sizes = [1, 7, 65536]
 
         contents = [
             b'short',
-            b''.join([uuid.uuid4().hex.encode() for _ in range(0, 100000)])
+            b''.join([uuid.UUID(int=rnd.getrandbits(128), version=4).hex.encode() for _ in range(0, 10000)])
         ]
 
         def yield_input(content, method, input_size):
@@ -45,13 +49,16 @@ class TestStreamUnzip(unittest.TestCase):
                 self.assertEqual(files[1][2], content)
 
     def test_output_size(self):
+        rnd = random.Random()
+        rnd.seed(1)
+
         methods = [zipfile.ZIP_DEFLATED, zipfile.ZIP_STORED]
         input_sizes = [1, 7, 65536]
         output_sizes = [1, 7, 65536]
 
         contents = [
             b'short',
-            b''.join([uuid.uuid4().hex.encode() for _ in range(0, 100000)])
+            b''.join([uuid.UUID(int=rnd.getrandbits(128), version=4).hex.encode() for _ in range(0, 10000)])
         ]
 
         def yield_input(content, method, input_size):
@@ -75,13 +82,16 @@ class TestStreamUnzip(unittest.TestCase):
         self.assertTrue(all_smaller)
 
     def test_exception_propagates(self):
+        rnd = random.Random()
+        rnd.seed(1)
+
         methods = [zipfile.ZIP_DEFLATED, zipfile.ZIP_STORED]
         input_sizes = [1, 7, 65536]
         output_sizes = [1, 7, 65536]
 
         contents = [
             b'short',
-            b''.join([uuid.uuid4().hex.encode() for _ in range(0, 100000)])
+            b''.join([uuid.UUID(int=rnd.getrandbits(128), version=4).hex.encode() for _ in range(0, 10000)])
         ]
 
         def yield_input(content, method, input_size):
@@ -105,13 +115,16 @@ class TestStreamUnzip(unittest.TestCase):
                             pass
 
     def test_bad_crc_32(self):
+        rnd = random.Random()
+        rnd.seed(1)
+
         methods = [zipfile.ZIP_DEFLATED, zipfile.ZIP_STORED]
         input_sizes = [1, 7, 65536]
         output_sizes = [1, 7, 65536]
 
         contents = [
             b'short',
-            b''.join([uuid.uuid4().hex.encode() for _ in range(0, 100000)])
+            b''.join([uuid.UUID(int=rnd.getrandbits(128), version=4).hex.encode() for _ in range(0, 10000)])
         ]
 
         def yield_input(content, method, input_size):
@@ -135,8 +148,11 @@ class TestStreamUnzip(unittest.TestCase):
                             pass
 
     def test_break_raises_generator_exit(self):
+        rnd = random.Random()
+        rnd.seed(1)
+
         input_size = 65536
-        content = b''.join([uuid.uuid4().hex.encode() for _ in range(0, 100000)])
+        content = b''.join([uuid.UUID(int=rnd.getrandbits(128), version=4).hex.encode() for _ in range(0, 10000)])
 
         raised_generator_exit = False
 
@@ -170,8 +186,11 @@ class TestStreamUnzip(unittest.TestCase):
         self.assertTrue(raised_generator_exit)
 
     def test_truncation_raises_value_error(self):
+        rnd = random.Random()
+        rnd.seed(1)
+
         input_sizes = [1, 7, 32, 128, 256, 65536]
-        content = b''.join([uuid.uuid4().hex.encode() for _ in range(0, 100000)])
+        content = b''.join([uuid.UUID(int=rnd.getrandbits(128), version=4).hex.encode() for _ in range(0, 100000)])
 
         def yield_input(input_size):
             file = io.BytesIO()
@@ -190,7 +209,10 @@ class TestStreamUnzip(unittest.TestCase):
                             pass
 
     def test_streaming(self):
-        contents = b''.join([uuid.uuid4().hex.encode() for _ in range(0, 10000)])
+        rnd = random.Random()
+        rnd.seed(1)
+        
+        contents = b''.join([uuid.UUID(int=rnd.getrandbits(128), version=4).hex.encode() for _ in range(0, 10000)])
         latest = None
 
         def yield_input():
