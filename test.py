@@ -300,7 +300,7 @@ class TestStreamUnzip(unittest.TestCase):
         self.assertEqual(files[3], (b'second.txt', None, b'Contents of the second file'))
         self.assertEqual(files[4][0], b'__MACOSX/._second.txt')
 
-    def test_infozip_large_with_descriptors(self):
+    def test_infozip_zip64_with_descriptors(self):
         def yield_input():
             with open('fixtures/infozip_3_0_zip64_with_descriptors.zip', 'rb') as f:
                 while True:
