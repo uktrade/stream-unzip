@@ -244,7 +244,7 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
 
         flag_bits = tuple(get_flag_bits(flags))
         if (
-            flag_bits[4]      # Enhanced deflate (Deflate64)
+            flag_bits[4]      # Enhanced deflating
             or flag_bits[5]   # Compressed patched
             or flag_bits[6]   # Strong encrypted
             or flag_bits[13]  # Masked header values
