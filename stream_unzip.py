@@ -160,15 +160,12 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
             key_1 = 591751049
             key_2 = 878082192
 
-            def crc32(ch, crc):
-                return ~zlib.crc32(bytes((ch,)), ~crc) & 0xFFFFFFFF
-
             def update_keys(byte):
                 nonlocal key_0, key_1, key_2
-                key_0 = crc32(byte, key_0)
+                key_0 = ~zlib.crc32(bytes((byte,)), ~key_0) & 0xFFFFFFFF
                 key_1 = (key_1 + (key_0 & 0xFF)) & 0xFFFFFFFF
                 key_1 = ((key_1 * 134775813) + 1) & 0xFFFFFFFF
-                key_2 = crc32(key_1 >> 24, key_2)
+                key_2 = ~zlib.crc32(bytes((key_1 >> 24,)), ~key_2) & 0xFFFFFFFF
 
             def decrypt(chunk):
                 chunk = bytearray(chunk)
