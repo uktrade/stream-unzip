@@ -141,6 +141,20 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
                 extra_offset += extra_data_size
                 yield (extra_signature, extra_data)
 
+        def get_extra_value(extra, if_true, signature, exception_if_missing, min_length, exception_if_too_short):
+            if if_true:
+                try:
+                    value = extra[signature]
+                except KeyError:
+                    raise exception_if_missing()
+
+                if len(value) < min_length:
+                    raise exception_if_too_short()
+            else:
+                value = None
+
+            return value
+
         def weak_decrypt_decompress(chunks, decompress, is_done, num_unused):
             key_0 = 305419896
             key_1 = 591751049
@@ -260,18 +274,7 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
 
         is_weak_encrypted = flag_bits[0] and raw_compression != 99
         is_aes_encrypted = flag_bits[0] and raw_compression == 99
-
-        if is_aes_encrypted:
-            try:
-                aes_extra = extra[aes_extra_signature]
-            except KeyError:
-                raise MissingAESExtraError()
-
-            if len(aes_extra) < 7:
-                raise TruncatedAESExtraError()
-        else:
-            aes_extra = None
-
+        aes_extra = get_extra_value(extra, is_aes_encrypted, aes_extra_signature, MissingAESExtraError, 7, TruncatedAESExtraError)
         is_aes_2_encrypted = is_aes_encrypted and aes_extra[0:2] == b'\x02\x00'
 
         if is_weak_encrypted and password is None:
@@ -290,17 +293,7 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
         has_data_descriptor = flag_bits[3]
 
         is_zip64 = compressed_size == zip64_compressed_size and uncompressed_size == zip64_compressed_size
-
-        if is_zip64:
-            try:
-                zip64_extra = extra[zip64_size_signature]
-            except KeyError:
-                raise MissingZip64ExtraError()
-
-            if len(zip64_extra) < 16:
-                raise TruncatedZip64ExtraError()
-        else:
-            zip64_extra = None
+        zip64_extra = get_extra_value(extra, is_zip64, zip64_size_signature, MissingZip64ExtraError, 16, TruncatedZip64ExtraError)
 
         uncompressed_size, compressed_size = \
             Struct('<QQ').unpack(zip64_extra) if is_zip64 else \
