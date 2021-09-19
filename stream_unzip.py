@@ -28,51 +28,42 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
         # - _get_num: returns a single `bytes` of a given length
         # - _return_unused: puts "unused" bytes "back", to be retrieved by a yield/get call
 
-        prev_chunk = b''
         chunk = b''
         offset = 0
         it = iter(iterable)
 
         def _yield_all():
-            nonlocal prev_chunk, chunk, offset
+            nonlocal chunk, offset
 
             while True:
-                if not chunk:
+                if offset == len(chunk):
                     try:
                         chunk = next(it)
                     except StopIteration:
                         break
-                prev_offset = offset
-                prev_chunk = chunk
+                    else:
+                        offset = 0
                 to_yield = min(len(chunk) - offset, chunk_size)
-                offset = (offset + to_yield) % len(chunk)
-                chunk = chunk if offset else b''
-                yield prev_chunk[prev_offset:prev_offset + to_yield]
+                offset = offset + to_yield
+                yield chunk[offset - to_yield:offset]
 
         def _yield_num(num):
-            nonlocal prev_chunk, chunk, offset
+            nonlocal chunk, offset
 
             while num:
-                if not chunk:
+                if offset == len(chunk):
                     chunk = next_or_truncated_error(it)
-                prev_offset = offset
-                prev_chunk = chunk
+                    offset = 0
                 to_yield = min(num, len(chunk) - offset, chunk_size)
-                offset = (offset + to_yield) % len(chunk)
-                chunk = chunk if offset else b''
+                offset = offset + to_yield
                 num -= to_yield
-                yield prev_chunk[prev_offset:prev_offset + to_yield]
+                yield chunk[offset - to_yield:offset]
 
         def _get_num(num):
             return b''.join(chunk for chunk in _yield_num(num))
 
         def _return_unused(num_unused):
             nonlocal chunk, offset
-
-            if num_unused and not chunk:
-                chunk = prev_chunk
-                offset = len(chunk)
-
             offset -= num_unused
 
         return _yield_all, _get_num, _return_unused
