@@ -244,7 +244,7 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
             if crc_32_actual != get_crc_32_expected():
                 raise CRC32IntegrityError()
 
-        version, flags, compression_raw, mod_time, mod_date, crc_32_expected, compressed_size, uncompressed_size, file_name_len, extra_field_len = \
+        version, flags, compression_raw, mod_time, mod_date, crc_32_expected, compressed_size_raw, uncompressed_size_raw, file_name_len, extra_field_len = \
             local_file_header_struct.unpack(get_num(local_file_header_struct.size))
 
         flag_bits = tuple(get_flag_bits(flags))
@@ -277,15 +277,13 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
         if compression not in (0, 8):
             raise UnsupportedCompressionTypeError(compression)
 
-        is_zip64 = compressed_size == zip64_compressed_size and uncompressed_size == zip64_compressed_size
+        is_zip64 = compressed_size_raw == zip64_compressed_size and uncompressed_size_raw == zip64_compressed_size
         zip64_extra = get_extra_value(extra, is_zip64, zip64_size_signature, MissingZip64ExtraError, 16, TruncatedZip64ExtraError)
 
         has_data_descriptor = flag_bits[3]
-        uncompressed_size_raw, compressed_size = \
-            Struct('<QQ').unpack(zip64_extra[:16]) if is_zip64 else \
-            (uncompressed_size, compressed_size)
         uncompressed_size = \
             None if has_data_descriptor and compression == 8 else \
+            Struct('<Q').unpack(zip64_extra[:8])[0] if is_zip64 else \
             uncompressed_size_raw
 
         decompressor = \
