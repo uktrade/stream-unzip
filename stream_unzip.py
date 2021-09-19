@@ -282,7 +282,7 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
 
         has_data_descriptor = flag_bits[3]
         uncompressed_size_raw, compressed_size = \
-            Struct('<QQ').unpack(zip64_extra) if is_zip64 else \
+            Struct('<QQ').unpack(zip64_extra[:16]) if is_zip64 else \
             (uncompressed_size, compressed_size)
         uncompressed_size = \
             None if has_data_descriptor and compression == 8 else \
