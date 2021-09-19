@@ -60,7 +60,7 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
                 yield chunk[offset - to_yield:offset]
 
         def _get_num(num):
-            return b''.join(chunk for chunk in _yield_num(num))
+            return b''.join(_yield_num(num))
 
         def _return_unused(num_unused):
             nonlocal offset
