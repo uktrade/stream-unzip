@@ -265,7 +265,7 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
             try:
                 aes_extra = extra[aes_extra_signature]
             except KeyError:
-                raise MissingAESExtaError()
+                raise MissingAESExtraError()
 
             if len(aes_extra) < 7:
                 raise TruncatedAESExtraError()
