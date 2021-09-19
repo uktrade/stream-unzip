@@ -290,11 +290,10 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
         if compression not in (0, 8):
             raise UnsupportedCompressionTypeError(compression)
 
-        has_data_descriptor = flag_bits[3]
-
         is_zip64 = compressed_size == zip64_compressed_size and uncompressed_size == zip64_compressed_size
         zip64_extra = get_extra_value(extra, is_zip64, zip64_size_signature, MissingZip64ExtraError, 16, TruncatedZip64ExtraError)
 
+        has_data_descriptor = flag_bits[3]
         uncompressed_size, compressed_size = \
             Struct('<QQ').unpack(zip64_extra) if is_zip64 else \
             (uncompressed_size, compressed_size)
