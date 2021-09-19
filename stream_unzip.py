@@ -257,7 +257,7 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
             if crc_32_actual != get_crc_32_expected():
                 raise CRC32IntegrityError()
 
-        version, flags, raw_compression, mod_time, mod_date, crc_32_expected, compressed_size, uncompressed_size, file_name_len, extra_field_len = \
+        version, flags, compression_raw, mod_time, mod_date, crc_32_expected, compressed_size, uncompressed_size, file_name_len, extra_field_len = \
             local_file_header_struct.unpack(get_num(local_file_header_struct.size))
 
         flag_bits = tuple(get_flag_bits(flags))
@@ -272,8 +272,8 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
         file_name = get_num(file_name_len)
         extra = dict(parse_extra(get_num(extra_field_len)))
 
-        is_weak_encrypted = flag_bits[0] and raw_compression != 99
-        is_aes_encrypted = flag_bits[0] and raw_compression == 99
+        is_weak_encrypted = flag_bits[0] and compression_raw != 99
+        is_aes_encrypted = flag_bits[0] and compression_raw == 99
         aes_extra = get_extra_value(extra, is_aes_encrypted, aes_extra_signature, MissingAESExtraError, 7, TruncatedAESExtraError)
         is_aes_2_encrypted = is_aes_encrypted and aes_extra[0:2] == b'\x02\x00'
 
@@ -285,7 +285,7 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
 
         compression = \
             Struct('<H').unpack(aes_extra[5:7])[0] if is_aes_encrypted else \
-            raw_compression
+            compression_raw
 
         if compression not in (0, 8):
             raise UnsupportedCompressionTypeError(compression)
