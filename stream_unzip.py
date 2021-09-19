@@ -191,10 +191,11 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
             return_unused(num_unused())
 
         def aes_decrypt_decompress(chunks, decompress, is_done, num_unused, key_length_raw):
-            if key_length_raw not in (1, 2, 3):
+            try:
+                key_length, salt_length = {1: (16, 8), 2: (24, 12), 3: (32, 16)}[key_length_raw]
+            except KeyError:
                 raise InvalidAESKeyLengthError(key_length_raw)
 
-            key_length, salt_length = {1: (16, 8), 2: (24, 12), 3: (32, 16)}[key_length_raw]
             salt = get_num(salt_length)
             password_verification_length = 2
 
