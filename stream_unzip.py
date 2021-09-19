@@ -199,10 +199,9 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
 
             salt = get_num(salt_length)
             password_verification_length = 2
-            password_verification = get_num(password_verification_length)
 
             keys = PBKDF2(password, salt, 2 * key_length + password_verification_length, 1000)
-            if keys[-2:] != password_verification:
+            if keys[-password_verification_length:] != get_num(password_verification_length):
                 raise IncorrectAESPasswordError()
 
             decrypter = AES.new(
