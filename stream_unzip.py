@@ -190,13 +190,11 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
 
             return_unused(num_unused())
 
-        def aes_decrypt_decompress(chunks, decompress, is_done, num_unused, aes_extra):
-            if aes_extra[4] not in (1, 2, 3):
-                raise InvalidAESKeyLengthError(aes_extra[4])
+        def aes_decrypt_decompress(chunks, decompress, is_done, num_unused, key_length_raw):
+            if key_length_raw not in (1, 2, 3):
+                raise InvalidAESKeyLengthError(key_length_raw)
 
-            key_length = {1: 16, 2: 24, 3: 32}[aes_extra[4]]
-            salt_length = {1: 8, 2: 12, 3: 16}[aes_extra[4]]
-
+            key_length, salt_length = {1: (16, 8), 2: (24, 12), 3: (32, 16)}[key_length_raw]
             salt = get_num(salt_length)
             password_verification_length = 2
 
@@ -305,7 +303,7 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
 
         decompressed_bytes = \
             weak_decrypt_decompress(yield_all(), *decompressor) if is_weak_encrypted else \
-            aes_decrypt_decompress(yield_all(), *decompressor, aes_extra) if is_aes_encrypted else \
+            aes_decrypt_decompress(yield_all(), *decompressor, key_length_raw=aes_extra[4]) if is_aes_encrypted else \
             no_decrypt_decompress(yield_all(), *decompressor)
 
         get_crc_32_expected = \
