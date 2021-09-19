@@ -176,7 +176,7 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
                     byte ^= ((temp * (temp ^ 1)) >> 8) & 0xFF
                     update_keys(byte)
                     chunk[i] = byte
-                return chunk
+                return bytes(chunk)
 
             for byte in password:
                 update_keys(byte)
