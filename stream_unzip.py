@@ -132,7 +132,7 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
 
         def parse_extra(extra):
             extra_offset = 0
-            while extra_offset < len(extra) - 4:
+            while extra_offset <= len(extra) - 4:
                 extra_signature = extra[extra_offset:extra_offset+2]
                 extra_offset += 2
                 extra_data_size, = Struct('<H').unpack(extra[extra_offset:extra_offset+2])
