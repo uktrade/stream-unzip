@@ -196,7 +196,6 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
 
             key_length = {1: 16, 2: 24, 3: 32}[aes_extra[4]]
             salt_length = {1: 8, 2: 12, 3: 16}[aes_extra[4]]
-            compression = aes_extra[5:7]
 
             salt = get_num(salt_length)
             password_verification_length = 2
