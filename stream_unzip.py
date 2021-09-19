@@ -294,12 +294,12 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
         zip64_extra = get_extra_value(extra, is_zip64, zip64_size_signature, MissingZip64ExtraError, 16, TruncatedZip64ExtraError)
 
         has_data_descriptor = flag_bits[3]
-        uncompressed_size, compressed_size = \
+        uncompressed_size_raw, compressed_size = \
             Struct('<QQ').unpack(zip64_extra) if is_zip64 else \
             (uncompressed_size, compressed_size)
         uncompressed_size = \
             None if has_data_descriptor and compression == 8 else \
-            uncompressed_size
+            uncompressed_size_raw
 
         decompressor = \
             get_dummy_decompressor(uncompressed_size) if compression == 0 else \
