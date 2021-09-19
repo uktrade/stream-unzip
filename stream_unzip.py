@@ -260,9 +260,6 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
         version, flags, raw_compression, mod_time, mod_date, crc_32_expected, compressed_size, uncompressed_size, file_name_len, extra_field_len = \
             local_file_header_struct.unpack(get_num(local_file_header_struct.size))
 
-        file_name = get_num(file_name_len)
-        extra = dict(parse_extra(get_num(extra_field_len)))
-
         flag_bits = tuple(get_flag_bits(flags))
         if (
             flag_bits[4]      # Enhanced deflating
@@ -271,6 +268,9 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
             or flag_bits[13]  # Masked header values
         ):
             raise UnsupportedFlagsError(flag_bits)
+
+        file_name = get_num(file_name_len)
+        extra = dict(parse_extra(get_num(extra_field_len)))
 
         is_weak_encrypted = flag_bits[0] and raw_compression != 99
         is_aes_encrypted = flag_bits[0] and raw_compression == 99
