@@ -61,6 +61,53 @@ class TestStreamUnzip(unittest.TestCase):
                 self.assertEqual(files[1][1], len(content))
                 self.assertEqual(files[1][2], content)
 
+    def test_skipping_wrapper(self):
+        rnd = random.Random()
+        rnd.seed(1)
+
+        methods = [zipfile.ZIP_DEFLATED, zipfile.ZIP_STORED]
+        input_sizes = [1, 7, 65536]
+        output_sizes = [1, 7, 65536]
+
+        contents = [
+            b'short',
+            b''.join([uuid.UUID(int=rnd.getrandbits(128), version=4).hex.encode() for _ in range(0, 10000)])
+        ]
+
+        def yield_input(content, method, input_size):
+            file = io.BytesIO()
+            with zipfile.ZipFile(file, 'w', method) as zf:
+                zf.writestr('first.txt', content)
+                zf.writestr('second.txt', content)
+
+            zip_bytes = file.getvalue()
+
+            for i in range(0, len(zip_bytes), input_size):
+                yield zip_bytes[i:i + input_size]
+
+        def skippable(stream_unzip_output):
+            def chunk_gen_func(chunks):
+                yield from chunks
+
+            for name, size, chunks in stream_unzip_output:
+                chunks_gen = chunk_gen_func(chunks)
+                yield name, size, chunks_gen
+                for a in chunks_gen:
+                    pass
+
+        combinations_iter = itertools.product(contents, methods, input_sizes, output_sizes)
+        for content, method, input_size, output_size in combinations_iter:
+            with self.subTest(content=content[:5], method=method, input_size=input_size, output_size=output_size):
+                combined = b''
+
+                for name, size, chunks in skippable(stream_unzip(yield_input(content, method, input_size), chunk_size=output_size)):
+                    if name == b'first.txt':
+                        continue
+
+                    combined = b''.join(chunks)
+
+                self.assertEqual(combined, content)
+
     def test_output_size(self):
         rnd = random.Random()
         rnd.seed(1)
