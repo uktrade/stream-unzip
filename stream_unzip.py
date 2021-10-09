@@ -305,9 +305,9 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
 
         return file_name, uncompressed_size, crc_checked_bytes
 
-    yield_all, get_num, return_unused = get_byte_readers(zipfile_chunks)
-
     def all():
+        yield_all, get_num, return_unused = get_byte_readers(zipfile_chunks)
+
         while True:
             signature = get_num(len(local_file_header_signature))
             if signature == local_file_header_signature:
