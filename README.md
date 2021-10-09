@@ -49,7 +49,7 @@ Exceptions raised by the source iterable are passed through `stream_unzip` uncha
 
       - **UnfinishedIterationError**
 
-      The chunks of a member file have not all been iterated.
+        The chunks of a member file have not all been iterated.
 
     - **UnzipValueError** (also inherits from the **ValueError** built-in)
 
