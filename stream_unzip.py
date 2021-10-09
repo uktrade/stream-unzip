@@ -318,13 +318,16 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
         else:
             raise UnexpectedSignatureError(signature)
 
-class UnzipError(ValueError):
+class UnzipError(Exception):
     pass
 
-class DataError(UnzipError):
+class UnzipValueError(UnzipError, ValueError):
     pass
 
-class UncompressError(UnzipError):
+class DataError(UnzipValueError):
+    pass
+
+class UncompressError(UnzipValueError):
     pass
 
 class DeflateError(UncompressError):
@@ -378,10 +381,10 @@ class HMACIntegrityError(IntegrityError):
 class CRC32IntegrityError(IntegrityError):
     pass
 
-class PasswordError(UnzipError):
+class PasswordError(UnzipValueError):
     pass
 
-class MissingPasswordError(UnzipError):
+class MissingPasswordError(UnzipValueError):
     pass
 
 class MissingZipCryptoPasswordError(MissingPasswordError):
