@@ -307,18 +307,30 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
 
     yield_all, get_num, return_unused = get_byte_readers(zipfile_chunks)
 
-    while True:
-        signature = get_num(len(local_file_header_signature))
-        if signature == local_file_header_signature:
-            yield yield_file(yield_all, get_num, return_unused)
-        elif signature == central_directory_signature:
-            for _ in yield_all():
-                pass
-            break
-        else:
-            raise UnexpectedSignatureError(signature)
+    def all():
+        while True:
+            signature = get_num(len(local_file_header_signature))
+            if signature == local_file_header_signature:
+                yield yield_file(yield_all, get_num, return_unused)
+            elif signature == central_directory_signature:
+                for _ in yield_all():
+                    pass
+                break
+            else:
+                raise UnexpectedSignatureError(signature)
+
+    for file_name, file_size, unzipped_chunks in all():
+        yield file_name, file_size, unzipped_chunks
+        for _ in unzipped_chunks:
+            raise UnfinishedIterationError()
 
 class UnzipError(Exception):
+    pass
+
+class InvalidOperationError(UnzipError):
+    pass
+
+class UnfinishedIterationError(InvalidOperationError):
     pass
 
 class UnzipValueError(UnzipError, ValueError):

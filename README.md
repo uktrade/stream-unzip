@@ -27,6 +27,7 @@ def zipped_chunks():
 
 for file_name, file_size, unzipped_chunks in stream_unzip(zipped_chunks(), password=b'my-password'):
     for chunk in unzipped_chunks:
+        # All chunks must be iterated, otherwise an UnfinishedIterationError will be raised
         print(chunk)
 ```
 
@@ -43,6 +44,12 @@ Exceptions raised by the source iterable are passed through `stream_unzip` uncha
   - **UnzipError**
 
     Base class for all explicitly-thrown exceptions
+
+    - **InvalidOperationError**
+
+      - **UnfinishedIterationError**
+
+      The chunks of a member file have not all been iterated.
 
     - **UnzipValueError** (also inherits from the **ValueError** built-in)
 
