@@ -26,8 +26,8 @@ def zipped_chunks():
         yield from r.iter_bytes(chunk_size=65536)
 
 for file_name, file_size, unzipped_chunks in stream_unzip(zipped_chunks(), password=b'my-password'):
+    # unzipped_chunks must be iterated to completion or UnfinishedIterationError will be raised
     for chunk in unzipped_chunks:
-        # unzipped_chunks must be iterated to completion or UnfinishedIterationError will be raised
         print(chunk)
 ```
 
