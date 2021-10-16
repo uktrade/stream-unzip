@@ -36,7 +36,7 @@ The file name and file size are extracted as reported from the file. If you don'
 
 ## Exceptions
 
-Exceptions raised by the source iterable are passed through `stream_unzip` unchanged. Other exceptions are in the `stream_unzip` module, and derive from its `UnzipError` which itself derives from Python's built-in `ValueError`.
+Exceptions raised by the source iterable are passed through `stream_unzip` unchanged. Other exceptions are in the `stream_unzip` module, and derive from its `UnzipError`.
 
 
 ## Exception hierarchy
