@@ -68,7 +68,7 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
 
         return _yield_all, _get_num, _return_unused
 
-    def get_dummy_decompressor(num_bytes):
+    def get_decompressor_none(num_bytes):
         num_decompressed = 0
         num_unused = 0
 
@@ -87,7 +87,7 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
 
         return _decompress, _is_done, _num_unused
 
-    def get_deflate_decompressor():
+    def get_decompressor_deflate():
         dobj = zlib.decompressobj(wbits=-zlib.MAX_WBITS)
 
         def _decompress_single(compressed_chunk):
@@ -146,7 +146,7 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
 
             return value
 
-        def weak_decrypt_decompress(chunks, decompress, is_done, num_unused):
+        def decrypt_weak_decompress(chunks, decompress, is_done, num_unused):
             key_0 = 305419896
             key_1 = 591751049
             key_2 = 878082192
@@ -180,7 +180,7 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
 
             return_unused(num_unused())
 
-        def aes_decrypt_decompress(chunks, decompress, is_done, num_unused, key_length_raw):
+        def decrypt_aes_decompress(chunks, decompress, is_done, num_unused, key_length_raw):
             try:
                 key_length, salt_length = {1: (16, 8), 2: (24, 12), 3: (32, 16)}[key_length_raw]
             except KeyError:
@@ -209,7 +209,7 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
             if get_num(10) != hmac.digest()[:10]:
                 raise HMACIntegrityError()
 
-        def no_decrypt_decompress(chunks, decompress, is_done, num_unused):
+        def decrypt_none_decompress(chunks, decompress, is_done, num_unused):
             while not is_done():
                 yield from decompress(next_or_truncated_error(chunks))
 
@@ -287,13 +287,13 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
             uncompressed_size_raw
 
         decompressor = \
-            get_dummy_decompressor(uncompressed_size) if compression == 0 else \
-            get_deflate_decompressor()
+            get_decompressor_none(uncompressed_size) if compression == 0 else \
+            get_decompressor_deflate()
 
         decompressed_bytes = \
-            weak_decrypt_decompress(yield_all(), *decompressor) if is_weak_encrypted else \
-            aes_decrypt_decompress(yield_all(), *decompressor, key_length_raw=aes_extra[4]) if is_aes_encrypted else \
-            no_decrypt_decompress(yield_all(), *decompressor)
+            decrypt_weak_decompress(yield_all(), *decompressor) if is_weak_encrypted else \
+            decrypt_aes_decompress(yield_all(), *decompressor, key_length_raw=aes_extra[4]) if is_aes_encrypted else \
+            decrypt_none_decompress(yield_all(), *decompressor)
 
         get_crc_32_expected = \
             partial(get_crc_32_expected_from_data_descriptor, is_zip64) if has_data_descriptor else \
