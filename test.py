@@ -570,10 +570,12 @@ class TestStreamUnzip(unittest.TestCase):
             for name, size, chunks in stream_unzip(yield_input(), password=b'not-password'):
                 next(chunks)
 
-    def test_7za_deflate64_not_supported(self):
+    def test_7za_deflate64(self):
         def yield_input():
             with open('fixtures/7za_17_4_deflate64.zip', 'rb') as f:
                 yield f.read()
 
-        with self.assertRaises(UnsupportedCompressionTypeError):
-            next(stream_unzip(yield_input()))
+        for name, size, chunks in stream_unzip(yield_input()):
+            content = b''.join(chunks)
+
+        self.assertEqual(content, b'Some content to be compressed and AES-encrypted\n' * 1000)

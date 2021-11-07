@@ -7,6 +7,8 @@ from Crypto.Hash import HMAC, SHA1
 from Crypto.Util import Counter
 from Crypto.Protocol.KDF import PBKDF2
 
+from stream_inflate import stream_inflate64
+
 
 def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
     local_file_header_signature = b'\x50\x4b\x03\x04'
@@ -113,6 +115,14 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
             return len(dobj.unused_data)
 
         return _decompress, _is_done, _num_unused
+
+    def get_decompressor_deflate64():
+        uncompressed_chunks, is_done, num_bytes_unconsumed = stream_inflate64()
+
+        def _decompress(compressed_chunk):
+            yield from uncompressed_chunks((compressed_chunk,))
+
+        return _decompress, is_done, num_bytes_unconsumed
 
     def yield_file(yield_all, get_num, return_unused):
 
@@ -274,7 +284,7 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
             Struct('<H').unpack(aes_extra[5:7])[0] if is_aes_encrypted else \
             compression_raw
 
-        if compression not in (0, 8):
+        if compression not in (0, 8, 9):
             raise UnsupportedCompressionTypeError(compression)
 
         is_zip64 = compressed_size_raw == zip64_compressed_size and uncompressed_size_raw == zip64_compressed_size
@@ -282,13 +292,14 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
 
         has_data_descriptor = flag_bits[3]
         uncompressed_size = \
-            None if has_data_descriptor and compression == 8 else \
+            None if has_data_descriptor and compression in (8, 9) else \
             Struct('<Q').unpack(zip64_extra[:8])[0] if is_zip64 else \
             uncompressed_size_raw
 
         decompressor = \
             get_decompressor_none(uncompressed_size) if compression == 0 else \
-            get_decompressor_deflate()
+            get_decompressor_deflate() if compression == 8 else \
+            get_decompressor_deflate64()
 
         decompressed_bytes = \
             decrypt_weak_decompress(yield_all(), *decompressor) if is_weak_encrypted else \
