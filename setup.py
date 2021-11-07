@@ -23,6 +23,7 @@ setuptools.setup(
     python_requires='>=3.5.0',
     install_requires=[
         'pycryptodome>=3.10.1',
+        'stream-inflate>=0.0.12',
     ],
     py_modules=[
         'stream_unzip',
