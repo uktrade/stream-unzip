@@ -142,3 +142,4 @@ Exceptions raised by the source iterable are passed through `stream_unzip` uncha
           - **InvalidAESKeyLengthError**
 
             AES key length specified in the ZIP is not any of 1, 2, or 3 (which correspond to 128, 192, and 256 bits respectively).
+
