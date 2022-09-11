@@ -625,3 +625,13 @@ class TestStreamUnzip(unittest.TestCase):
             content = b''.join(chunks)
 
         self.assertEqual(content, b'Some content to be compressed and AES-encrypted\n' * 1000)
+
+    def test_7z_password_data_descriptor(self):
+        def yield_input():
+            with open('fixtures/7z_17_4_password_data_descriptor.zip', 'rb') as f:
+                yield f.read()
+
+        for name, size, chunks in stream_unzip(yield_input(), password=b'password'):
+            content = b''.join(chunks)
+
+        self.assertEqual(content, b'Some content to be compressed and encrypted')

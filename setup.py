@@ -20,7 +20,7 @@ setuptools.setup(
         'License :: OSI Approved :: MIT License',
         'Topic :: System :: Archiving :: Compression',
     ],
-    python_requires='>=3.5.0',
+    python_requires='>=3.5.1',
     install_requires=[
         'pycryptodome>=3.10.1',
         'stream-inflate>=0.0.12',
