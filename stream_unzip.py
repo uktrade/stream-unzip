@@ -182,7 +182,12 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
             for byte in password:
                 update_keys(byte)
 
-            if decrypt(get_num(12))[11] != mod_time >> 8:
+            encryption_header = decrypt(get_num(12))
+            check_password_byte = \
+                (mod_time >> 8) if has_data_descriptor else \
+                (crc_32_expected >> 24)
+
+            if encryption_header[11] != check_password_byte:
                 raise IncorrectZipCryptoPasswordError()
 
             while not is_done():
