@@ -319,7 +319,7 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
             read_data_and_crc_32_ignore(get_crc_32_expected, decompressed_bytes) if is_aes_2_encrypted else \
             read_data_and_crc_32_verify(get_crc_32_expected, decompressed_bytes)
 
-        return file_name, uncompressed_size, crc_checked_bytes
+        return file_name, uncompressed_size, crc_checked_bytes, crc_32_expected
 
     def all():
         yield_all, get_num, return_unused = get_byte_readers(zipfile_chunks)
@@ -335,8 +335,8 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
             else:
                 raise UnexpectedSignatureError(signature)
 
-    for file_name, file_size, unzipped_chunks in all():
-        yield file_name, file_size, unzipped_chunks
+    for file_name, file_size, unzipped_chunks, crc_32 in all():
+        yield file_name, file_size, unzipped_chunks, crc_32
         for _ in unzipped_chunks:
             raise UnfinishedIterationError()
 
