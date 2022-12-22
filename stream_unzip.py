@@ -230,14 +230,25 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
 
             return_unused(num_unused())
 
-        def get_crc_32_expected_from_data_descriptor(is_sure_zip64):
+        def read_data_and_count(chunks):
+            l = 0
+
+            def _iter():
+                nonlocal l
+                for chunk in chunks:
+                    l += len(chunk)
+                    yield chunk
+
+            return _iter(), lambda: l
+
+        def get_crc_32_expected_from_data_descriptor(is_sure_zip64, get_uncompressed_size):
             dd_optional_signature = get_num(4)
             dd_so_far_num = \
                 0 if dd_optional_signature == b'PK\x07\x08' else \
                 4
             dd_so_far = dd_optional_signature[:dd_so_far_num]
             dd_remaining = \
-                (20 - dd_so_far_num) if is_sure_zip64 else \
+                (20 - dd_so_far_num) if is_sure_zip64 or get_uncompressed_size() > 0xFFFFFFFF else \
                 (12 - dd_so_far_num)
             dd = dd_so_far + get_num(dd_remaining)
             crc_32_expected, = Struct('<I').unpack(dd[:4])
@@ -311,13 +322,15 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
             decrypt_aes_decompress(yield_all(), *decompressor, key_length_raw=aes_extra[4]) if is_aes_encrypted else \
             decrypt_none_decompress(yield_all(), *decompressor)
 
+        counted_decompressed_bytes, get_decompressed_size = read_data_and_count(decompressed_bytes)
+
         get_crc_32_expected = \
-            partial(get_crc_32_expected_from_data_descriptor, is_sure_zip64) if has_data_descriptor else \
+            partial(get_crc_32_expected_from_data_descriptor, is_sure_zip64, get_decompressed_size) if has_data_descriptor else \
             get_crc_32_expected_from_file_header
 
         crc_checked_bytes = \
-            read_data_and_crc_32_ignore(get_crc_32_expected, decompressed_bytes) if is_aes_2_encrypted else \
-            read_data_and_crc_32_verify(get_crc_32_expected, decompressed_bytes)
+            read_data_and_crc_32_ignore(get_crc_32_expected, counted_decompressed_bytes) if is_aes_2_encrypted else \
+            read_data_and_crc_32_verify(get_crc_32_expected, counted_decompressed_bytes)
 
         return file_name, uncompressed_size, crc_checked_bytes
 
