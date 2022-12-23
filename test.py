@@ -635,3 +635,42 @@ class TestStreamUnzip(unittest.TestCase):
             content = b''.join(chunks)
 
         self.assertEqual(content, b'Some content to be compressed and encrypted')
+
+    def test_java_zip_limit(self):
+        def yield_input():
+            with open('fixtures/java_19_0_1_zip_limit.zip', 'rb') as f:
+                yield f.read()
+
+        l = 0
+        for name, size, chunks in stream_unzip(yield_input()):
+            for chunk in chunks:
+                l += len(chunk)
+
+        self.assertEqual(l, 4294967294)
+
+    def test_java_zip64_limit(self):
+        def yield_input():
+            with open('fixtures/java_19_0_1_zip64_limit.zip', 'rb') as f:
+                yield f.read()
+
+        # This is more to document the behaviour of the code. Ideally no exception
+        # would be raised and the ZIP decompressed. However, when compressed data
+        # is exactly 4294967295 bytes in length, Java uses a ZIP64 data descriptor
+        # However, it looks like InfoZIP can make a ZIP32 data descriptor for this
+        # case. Not sure on the best course of action
+        with self.assertRaises(UnexpectedSignatureError):
+            for name, size, chunks in stream_unzip(yield_input()):
+                for _ in chunks:
+                    pass
+
+    def test_java_zip64_limit_plus_one(self):
+        def yield_input():
+            with open('fixtures/java_19_0_1_zip64_limit_plus_one.zip', 'rb') as f:
+                yield f.read()
+
+        l = 0
+        for name, size, chunks in stream_unzip(yield_input()):
+            for chunk in chunks:
+                l += len(chunk)
+
+        self.assertEqual(l, 4294967296)
