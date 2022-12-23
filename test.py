@@ -648,6 +648,17 @@ class TestStreamUnzip(unittest.TestCase):
 
         self.assertEqual(l, 4294967294)
 
+    def test_java_zip_limit_crc_32_error(self):
+        def yield_input():
+            with open('fixtures/java_19_0_1_zip_limit.zip', 'rb') as f:
+                b = f.read()
+                yield b[:-87] + b'\0' + b[-86:]
+
+        with self.assertRaises(CRC32IntegrityError):
+            for name, size, chunks in stream_unzip(yield_input()):
+                for chunk in chunks:
+                    pass
+
     def test_java_zip64_limit(self):
         def yield_input():
             with open('fixtures/java_19_0_1_zip64_limit.zip', 'rb') as f:
@@ -660,6 +671,17 @@ class TestStreamUnzip(unittest.TestCase):
 
         self.assertEqual(l, 4294967295)
 
+    def test_java_zip64_limit_crc_32_error(self):
+        def yield_input():
+            with open('fixtures/java_19_0_1_zip64_limit.zip', 'rb') as f:
+                b = f.read()
+                yield b[:-110] + b'\1' + b[-109:]
+
+        with self.assertRaises(CRC32IntegrityError):
+            for name, size, chunks in stream_unzip(yield_input()):
+                for chunk in chunks:
+                    pass
+
     def test_java_zip64_limit_plus_one(self):
         def yield_input():
             with open('fixtures/java_19_0_1_zip64_limit_plus_one.zip', 'rb') as f:
@@ -671,3 +693,14 @@ class TestStreamUnzip(unittest.TestCase):
                 l += len(chunk)
 
         self.assertEqual(l, 4294967296)
+
+    def test_java_zip64_limit_plus_one_crc_32_error(self):
+        def yield_input():
+            with open('fixtures/java_19_0_1_zip64_limit_plus_one.zip', 'rb') as f:
+                b = f.read()
+                yield b[:-110] + b'\1' + b[-109:]
+
+        with self.assertRaises(CRC32IntegrityError):
+            for name, size, chunks in stream_unzip(yield_input()):
+                for chunk in chunks:
+                    pass
