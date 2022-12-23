@@ -111,6 +111,16 @@ Exceptions raised by the source iterable are passed through `stream_unzip` uncha
 
             The CRC32 integrity check on decrypted and decompressed bytes failed.
 
+          - **SizeIntegrityError**
+
+            - **UncompressedSizeIntegrityError**
+
+              The amount of uncompressed bytes of a member file did not match its metadata.
+
+            - **CompressedSizeIntegrityError**
+
+              The amount of compressed bytes of a member file did not match its metadata.
+
         - **TruncatedDataError**
 
           The stream of bytes ended unexpectedly.
