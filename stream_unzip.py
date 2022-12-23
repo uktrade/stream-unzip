@@ -291,28 +291,21 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
             must_treat_as_zip64 = is_sure_zip64 or compressed_size_data > 0xFFFFFFFF or uncompressed_size_data > 0xFFFFFFFF
             dd = b''
 
-            if best_matches != (True, True, True, True) and not must_treat_as_zip64:
-                dd += get_num(max(12 - len(dd), 0))
-                signature_dd, crc_32_dd, compressed_size_dd, uncompressed_size_dd = Struct('<0sIII').unpack(dd)
-                matches = (signature_dd == b'', is_aes_2_encrypted or crc_32_dd == crc_32_data, compressed_size_dd == compressed_size_data, uncompressed_size_dd == uncompressed_size_data)
-                best_matches = max(best_matches, matches, key=lambda t: t.count(True))
+            checks = ((
+                (Struct('<0sIII'), b''),
+                (Struct('<4sIII'), b'PK\x07\x08'),
+            ) if not must_treat_as_zip64 else ()) + (
+                (Struct('<0sIQQ'), b''),
+                (Struct('<4sIQQ'), b'PK\x07\x08'),
+            )
 
-            if best_matches != (True, True, True, True) and not must_treat_as_zip64:
-                dd += get_num(max(16 - len(dd), 0))
-                signature_dd, crc_32_dd, compressed_size_dd, uncompressed_size_dd = Struct('<4sIII').unpack(dd)
-                matches = (signature_dd == b'PK\x07\x08', is_aes_2_encrypted or crc_32_dd == crc_32_data, compressed_size_dd == compressed_size_data, uncompressed_size_dd == uncompressed_size_data)
-                best_matches = max(best_matches, matches, key=lambda t: t.count(True))
+            for dd_struct, expected_signature in checks:
+                if best_matches == (True, True, True, True):
+                    break
 
-            if best_matches != (True, True, True, True):
-                dd += get_num(max(20 - len(dd), 0))
-                signature_dd, crc_32_dd, compressed_size_dd, uncompressed_size_dd = Struct('<0sIQQ').unpack(dd)
-                matches = (signature_dd == b'', is_aes_2_encrypted or crc_32_dd == crc_32_data, compressed_size_dd == compressed_size_data, uncompressed_size_dd == uncompressed_size_data)
-                best_matches = max(best_matches, matches, key=lambda t: t.count(True))
-
-            if best_matches != (True, True, True, True):
-                dd += get_num(max(24 - len(dd), 0))
-                signature_dd, crc_32_dd, compressed_size_dd, uncompressed_size_dd = Struct('<4sIQQ').unpack(dd)
-                matches = (signature_dd == b'PK\x07\x08', is_aes_2_encrypted or crc_32_dd == crc_32_data, compressed_size_dd == compressed_size_data, uncompressed_size_dd == uncompressed_size_data)
+                dd += get_num(max(dd_struct.size - len(dd), 0))
+                signature_dd, crc_32_dd, compressed_size_dd, uncompressed_size_dd = dd_struct.unpack(dd)
+                matches = (signature_dd == expected_signature, is_aes_2_encrypted or crc_32_dd == crc_32_data, compressed_size_dd == compressed_size_data, uncompressed_size_dd == uncompressed_size_data)
                 best_matches = max(best_matches, matches, key=lambda t: t.count(True))
 
             if not best_matches[0]:
