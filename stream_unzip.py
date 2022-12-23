@@ -13,7 +13,7 @@ from stream_inflate import stream_inflate64
 def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
     local_file_header_signature = b'\x50\x4b\x03\x04'
     local_file_header_struct = Struct('<H2sHHHIIIHH')
-    zip64_compressed_size = 4294967295
+    zip64_compressed_size = 0xFFFFFFFF
     zip64_size_signature = b'\x01\x00'
     aes_extra_signature = b'\x01\x99'
     central_directory_signature = b'\x50\x4b\x01\x02'
