@@ -169,8 +169,6 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
             key_2 = 878082192
             crc32 = zlib.crc32
             bytes_c = bytes
-            offset_1 = None
-            offset_2 = None
 
             def update_keys(byte):
                 nonlocal key_0, key_1, key_2
@@ -191,94 +189,71 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
             for byte in password:
                 update_keys(byte)
 
-            def _iter():
-                nonlocal offset_1, offset_2
-                offset_1 = get_offset_from_start()
+            encryption_header = decrypt(get_num(12))
+            check_password_byte = \
+                (mod_time >> 8) if has_data_descriptor else \
+                (crc_32_expected >> 24)
 
-                encryption_header = decrypt(get_num(12))
-                check_password_byte = \
-                    (mod_time >> 8) if has_data_descriptor else \
-                    (crc_32_expected >> 24)
+            if encryption_header[11] != check_password_byte:
+                raise IncorrectZipCryptoPasswordError()
 
-                if encryption_header[11] != check_password_byte:
-                    raise IncorrectZipCryptoPasswordError()
+            while not is_done():
+                yield from decompress(decrypt(next_or_truncated_error(chunks)))
 
-                while not is_done():
-                    yield from decompress(decrypt(next_or_truncated_error(chunks)))
-
-                return_unused(num_unused())
-                offset_2 = get_offset_from_start()
-
-            return _iter(), lambda: offset_2 - offset_1
+            return_unused(num_unused())
 
         def decrypt_aes_decompress(chunks, decompress, is_done, num_unused, key_length_raw):
-            offset_1 = None
-            offset_2 = None
-
             try:
                 key_length, salt_length = {1: (16, 8), 2: (24, 12), 3: (32, 16)}[key_length_raw]
             except KeyError:
                 raise InvalidAESKeyLengthError(key_length_raw)
 
-            def _iter():
-                nonlocal offset_1, offset_2
-                offset_1 = get_offset_from_start()
+            salt = get_num(salt_length)
+            password_verification_length = 2
 
-                salt = get_num(salt_length)
-                password_verification_length = 2
+            keys = PBKDF2(password, salt, 2 * key_length + password_verification_length, 1000)
+            if keys[-password_verification_length:] != get_num(password_verification_length):
+                raise IncorrectAESPasswordError()
 
-                keys = PBKDF2(password, salt, 2 * key_length + password_verification_length, 1000)
-                if keys[-password_verification_length:] != get_num(password_verification_length):
-                    raise IncorrectAESPasswordError()
+            decrypter = AES.new(
+                keys[:key_length], AES.MODE_CTR,
+                counter=Counter.new(nbits=128, little_endian=True)
+            )
+            hmac = HMAC.new(keys[key_length:key_length*2], digestmod=SHA1)
 
-                decrypter = AES.new(
-                    keys[:key_length], AES.MODE_CTR,
-                    counter=Counter.new(nbits=128, little_endian=True)
-                )
-                hmac = HMAC.new(keys[key_length:key_length*2], digestmod=SHA1)
+            while not is_done():
+                chunk = next_or_truncated_error(chunks)
+                yield from decompress(decrypter.decrypt(chunk))
+                hmac.update(chunk[:len(chunk) - num_unused()])
 
-                while not is_done():
-                    chunk = next_or_truncated_error(chunks)
-                    yield from decompress(decrypter.decrypt(chunk))
-                    hmac.update(chunk[:len(chunk) - num_unused()])
+            return_unused(num_unused())
 
-                return_unused(num_unused())
-
-                if get_num(10) != hmac.digest()[:10]:
-                    raise HMACIntegrityError()
-
-                offset_2 = get_offset_from_start()
-
-            return _iter(), lambda: offset_2 - offset_1
+            if get_num(10) != hmac.digest()[:10]:
+                raise HMACIntegrityError()
 
         def decrypt_none_decompress(chunks, decompress, is_done, num_unused):
-            offset_1 = None
-            offset_2 = None
+            while not is_done():
+                yield from decompress(next_or_truncated_error(chunks))
 
-            def _iter():
-                nonlocal offset_1, offset_2
-                offset_1 = get_offset_from_start()
-                while not is_done():
-                    yield from decompress(next_or_truncated_error(chunks))
-
-                return_unused(num_unused())
-
-                offset_2 = get_offset_from_start()
-
-            return _iter(), lambda: offset_2 - offset_1
+            return_unused(num_unused())
 
         def read_data_and_count_and_crc32(chunks):
+            offset_1 = None
+            offset_2 = None
             crc_32_actual = zlib.crc32(b'')
             l = 0
 
             def _iter():
-                nonlocal crc_32_actual, l
+                nonlocal offset_1, offset_2, crc_32_actual, l
+
+                offset_1 = get_offset_from_start()
                 for chunk in chunks:
                     crc_32_actual = zlib.crc32(chunk, crc_32_actual)
                     l += len(chunk)
                     yield chunk
+                offset_2 = get_offset_from_start()
 
-            return _iter(), lambda: crc_32_actual, lambda: l
+            return _iter(), lambda: offset_2 - offset_1, lambda: crc_32_actual, lambda: l
 
         def checked_from_local_header(chunks, is_aes_2_encrypted, get_crc_32, get_compressed_size, get_uncompressed_size):
             yield from chunks
@@ -404,12 +379,12 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
             get_decompressor_deflate() if compression == 8 else \
             get_decompressor_deflate64()
 
-        decompressed_bytes, get_compressed_size = \
+        decompressed_bytes = \
             decrypt_weak_decompress(yield_all(), *decompressor) if is_weak_encrypted else \
             decrypt_aes_decompress(yield_all(), *decompressor, key_length_raw=aes_extra[4]) if is_aes_encrypted else \
             decrypt_none_decompress(yield_all(), *decompressor)
 
-        counted_decompressed_bytes, get_crc_32_actual, get_uncompressed_size = read_data_and_count_and_crc32(decompressed_bytes)
+        counted_decompressed_bytes, get_compressed_size, get_crc_32_actual, get_uncompressed_size = read_data_and_count_and_crc32(decompressed_bytes)
 
         checked_bytes = \
             checked_from_data_descriptor(counted_decompressed_bytes, is_sure_zip64, is_aes_2_encrypted, get_crc_32_actual, get_compressed_size, get_uncompressed_size) if has_data_descriptor else \
