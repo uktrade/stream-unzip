@@ -230,14 +230,14 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
 
             return_unused(num_unused())
 
-        def get_crc_32_expected_from_data_descriptor(is_zip64):
+        def get_crc_32_expected_from_data_descriptor(is_sure_zip64):
             dd_optional_signature = get_num(4)
             dd_so_far_num = \
                 0 if dd_optional_signature == b'PK\x07\x08' else \
                 4
             dd_so_far = dd_optional_signature[:dd_so_far_num]
             dd_remaining = \
-                (20 - dd_so_far_num) if is_zip64 else \
+                (20 - dd_so_far_num) if is_sure_zip64 else \
                 (12 - dd_so_far_num)
             dd = dd_so_far + get_num(dd_remaining)
             crc_32_expected, = Struct('<I').unpack(dd[:4])
@@ -293,12 +293,12 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
             raise UnsupportedCompressionTypeError(compression)
 
         has_data_descriptor = flag_bits[3]
-        is_zip64 = compressed_size_raw == zip64_compressed_size and uncompressed_size_raw == zip64_compressed_size
-        zip64_extra = get_extra_value(extra, not has_data_descriptor and is_zip64, zip64_size_signature, MissingZip64ExtraError, 16, TruncatedZip64ExtraError)
+        is_sure_zip64 = compressed_size_raw == zip64_compressed_size and uncompressed_size_raw == zip64_compressed_size
+        zip64_extra = get_extra_value(extra, not has_data_descriptor and is_sure_zip64, zip64_size_signature, MissingZip64ExtraError, 16, TruncatedZip64ExtraError)
 
         uncompressed_size = \
             None if has_data_descriptor and compression in (8, 9) else \
-            Struct('<Q').unpack(zip64_extra[:8])[0] if is_zip64 else \
+            Struct('<Q').unpack(zip64_extra[:8])[0] if is_sure_zip64 else \
             uncompressed_size_raw
 
         decompressor = \
@@ -312,7 +312,7 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
             decrypt_none_decompress(yield_all(), *decompressor)
 
         get_crc_32_expected = \
-            partial(get_crc_32_expected_from_data_descriptor, is_zip64) if has_data_descriptor else \
+            partial(get_crc_32_expected_from_data_descriptor, is_sure_zip64) if has_data_descriptor else \
             get_crc_32_expected_from_file_header
 
         crc_checked_bytes = \
