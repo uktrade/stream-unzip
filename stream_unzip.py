@@ -267,22 +267,39 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
 
             return _iter(), lambda: offset_2 - offset_1
 
-        def read_data_and_count(chunks):
+        def read_data_and_count_and_crc32(chunks):
+            crc_32_actual = zlib.crc32(b'')
             l = 0
 
             def _iter():
-                nonlocal l
+                nonlocal crc_32_actual, l
                 for chunk in chunks:
+                    crc_32_actual = zlib.crc32(chunk, crc_32_actual)
                     l += len(chunk)
                     yield chunk
 
-            return _iter(), lambda: l
+            return _iter(), lambda: crc_32_actual, lambda: l
 
-        def get_crc_32_expected_from_data_descriptor(is_sure_zip64, get_compressed_size, get_uncompressed_size):
+        def checked_from_local_header(chunks, is_aes_2_encrypted, get_crc_32, get_compressed_size, get_uncompressed_size):
+            yield from chunks
+
+            crc_32_data = get_crc_32()
+            compressed_size_data = get_compressed_size()
+            uncompressed_size_data = get_uncompressed_size()
+
+            if not is_aes_2_encrypted and crc_32_expected != crc_32_data:
+                raise CRC32IntegrityError()
+
+            if compressed_size_data != compressed_size:
+                raise CompressedSizeIntegrityError()
+
+            if uncompressed_size_data != uncompressed_size:
+                raise UncompressedSizeIntegrityError()
+
+        def checked_from_data_descriptor(chunks, is_sure_zip64, is_aes_2_encrypted, get_crc_32, get_compressed_size, get_uncompressed_size):
             # The format of the data descriptor is unfortunately not known with absolute certainty in all cases
-            # so we we use a heuristic to extract the CRC32 value - using the known compressed and uncompressed
-            # sizes of the data to inch our way forward through the stream until we get a match with their
-            # corresponding values in the data descriptor.
+            # so we we use a heuristic to detect it - using the known crc32 value, compressed size, and uncompressed
+            # size of the data to inch our way forward through the stream until we get a match
             #
             # This isn't perfect - it could just happen to match too soon, or in the case of errors in the
             # stream, match too late. Either of these cases could cause issues in further processing.
@@ -290,58 +307,50 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
             # The heuristic could potentially be improved to reduce the chance of these - but it's suspected
             # that they are already fairly pathological/unlikely
 
+            yield from chunks
+
+            crc_32_data = get_crc_32()
             compressed_size_data = get_compressed_size()
             uncompressed_size_data = get_uncompressed_size()
-            done = False
+            best_matches = (False, False, False, False)
             must_treat_as_zip64 = is_sure_zip64 or compressed_size_data > 0xFFFFFFFF or uncompressed_size_data > 0xFFFFFFFF
             dd = b''
 
-            if not done and not must_treat_as_zip64:
+            if best_matches != (True, True, True, True) and not must_treat_as_zip64:
                 dd += get_num(max(12 - len(dd), 0))
-                crc_32_expected, compressed_size_dd, uncompressed_size_dd = Struct('<III').unpack(dd)
-                done = compressed_size_dd == compressed_size_data and uncompressed_size_dd == uncompressed_size_data
+                crc_32_dd, compressed_size_dd, uncompressed_size_dd = Struct('<III').unpack(dd)
+                matches = (True, is_aes_2_encrypted or crc_32_dd == crc_32_data, compressed_size_dd == compressed_size_data, uncompressed_size_dd == uncompressed_size_data)
+                best_matches = max(best_matches, matches, key=lambda t: t.count(True))
 
-            if not done and not must_treat_as_zip64:
+            if best_matches != (True, True, True, True) and not must_treat_as_zip64:
                 dd += get_num(max(16 - len(dd), 0))
-                crc_32_expected, compressed_size_dd, uncompressed_size_dd = Struct('<III').unpack(dd[4:])
-                done = compressed_size_dd == compressed_size_data and uncompressed_size_dd == uncompressed_size_data
+                crc_32_dd, compressed_size_dd, uncompressed_size_dd = Struct('<III').unpack(dd[4:])
+                matches = (dd[:4] == b'PK\x07\x08', is_aes_2_encrypted or crc_32_dd == crc_32_data, compressed_size_dd == compressed_size_data, uncompressed_size_dd == uncompressed_size_data)
+                best_matches = max(best_matches, matches, key=lambda t: t.count(True))
 
-            if not done:
+            if best_matches != (True, True, True, True):
                 dd += get_num(max(20 - len(dd), 0))
-                crc_32_expected, compressed_size_dd, uncompressed_size_dd = Struct('<IQQ').unpack(dd)
-                done = compressed_size_dd == compressed_size_data and uncompressed_size_dd == uncompressed_size_data
+                crc_32_dd, compressed_size_dd, uncompressed_size_dd = Struct('<IQQ').unpack(dd)
+                matches = (True, is_aes_2_encrypted or crc_32_dd == crc_32_data, compressed_size_dd == compressed_size_data, uncompressed_size_dd == uncompressed_size_data)
+                best_matches = max(best_matches, matches, key=lambda t: t.count(True))
 
-            if not done:
+            if best_matches != (True, True, True, True):
                 dd += get_num(max(24 - len(dd), 0))
-                if dd[:4] != b'PK\x07\x08':
-                    raise UnexpectedSignatureError(dd[:4])
+                crc_32_dd, compressed_size_dd, uncompressed_size_dd = Struct('<IQQ').unpack(dd[4:])
+                matches = (dd[:4] == b'PK\x07\x08', is_aes_2_encrypted or crc_32_dd == crc_32_data, compressed_size_dd == compressed_size_data, uncompressed_size_dd == uncompressed_size_data)
+                best_matches = max(best_matches, matches, key=lambda t: t.count(True))
 
-                crc_32_expected, compressed_size_dd, uncompressed_size_dd = Struct('<IQQ').unpack(dd[4:])
-                done = compressed_size_dd == compressed_size_data and uncompressed_size_dd == uncompressed_size_data
+            if not best_matches[0]:
+                raise UnexpectedSignatureError()
 
-            if not done and compressed_size_dd != compressed_size_data:
+            if not best_matches[1]:
+                raise CRC32IntegrityError()
+
+            if not best_matches[2]:
                 raise CompressedSizeIntegrityError()
 
-            if not done and uncompressed_size_dd != uncompressed_size_data:
+            if not best_matches[3]:
                 raise UncompressedSizeIntegrityError()
-
-            return crc_32_expected
-
-        def get_crc_32_expected_from_file_header():
-            return crc_32_expected
-
-        def read_data_and_crc_32_ignore(get_crc_32_expected, chunks):
-            yield from chunks
-            get_crc_32_expected()
-
-        def read_data_and_crc_32_verify(get_crc_32_expected, chunks):
-            crc_32_actual = zlib.crc32(b'')
-            for chunk in chunks:
-                crc_32_actual = zlib.crc32(chunk, crc_32_actual)
-                yield chunk
-
-            if crc_32_actual != get_crc_32_expected():
-                raise CRC32IntegrityError()
 
         version, flags, compression_raw, mod_time, mod_date, crc_32_expected, compressed_size_raw, uncompressed_size_raw, file_name_len, extra_field_len = \
             local_file_header_struct.unpack(get_num(local_file_header_struct.size))
@@ -380,6 +389,11 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
         is_sure_zip64 = compressed_size_raw == zip64_compressed_size and uncompressed_size_raw == zip64_compressed_size
         zip64_extra = get_extra_value(extra, not has_data_descriptor and is_sure_zip64, zip64_size_signature, MissingZip64ExtraError, 16, TruncatedZip64ExtraError)
 
+        compressed_size = \
+            None if has_data_descriptor and compression in (8, 9) else \
+            Struct('<Q').unpack(zip64_extra[8:16])[0] if is_sure_zip64 else \
+            compressed_size_raw
+
         uncompressed_size = \
             None if has_data_descriptor and compression in (8, 9) else \
             Struct('<Q').unpack(zip64_extra[:8])[0] if is_sure_zip64 else \
@@ -395,17 +409,13 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
             decrypt_aes_decompress(yield_all(), *decompressor, key_length_raw=aes_extra[4]) if is_aes_encrypted else \
             decrypt_none_decompress(yield_all(), *decompressor)
 
-        counted_decompressed_bytes, get_decompressed_size = read_data_and_count(decompressed_bytes)
+        counted_decompressed_bytes, get_crc_32_actual, get_uncompressed_size = read_data_and_count_and_crc32(decompressed_bytes)
 
-        get_crc_32_expected = \
-            partial(get_crc_32_expected_from_data_descriptor, is_sure_zip64, get_compressed_size, get_decompressed_size) if has_data_descriptor else \
-            get_crc_32_expected_from_file_header
-
-        crc_checked_bytes = \
-            read_data_and_crc_32_ignore(get_crc_32_expected, counted_decompressed_bytes) if is_aes_2_encrypted else \
-            read_data_and_crc_32_verify(get_crc_32_expected, counted_decompressed_bytes)
-
-        return file_name, uncompressed_size, crc_checked_bytes
+        checked_bytes = \
+            checked_from_data_descriptor(counted_decompressed_bytes, is_sure_zip64, is_aes_2_encrypted, get_crc_32_actual, get_compressed_size, get_uncompressed_size) if has_data_descriptor else \
+            checked_from_local_header(counted_decompressed_bytes, is_aes_2_encrypted, get_crc_32_actual, get_compressed_size, get_uncompressed_size)
+            
+        return file_name, uncompressed_size, checked_bytes
 
     def all():
         yield_all, get_num, return_unused, get_offset_from_start = get_byte_readers(zipfile_chunks)
