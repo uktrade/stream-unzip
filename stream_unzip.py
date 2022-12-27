@@ -20,6 +20,7 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
     unsigned_short = Struct('<H')
     unsigned_long_long = Struct('<Q')
 
+    dd_optional_sig = b'PK\x07\x08'
     dd_struct_32 = Struct('<0sIII')
     dd_struct_32_with_sig = Struct('<4sIII')
     dd_struct_64 = Struct('<0sIQQ')
@@ -301,10 +302,10 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
 
             checks = ((
                 (dd_struct_32, b''),
-                (dd_struct_32_with_sig, b'PK\x07\x08'),
+                (dd_struct_32_with_sig, dd_optional_sig),
             ) if not must_treat_as_zip64 else ()) + (
                 (dd_struct_64, b''),
-                (dd_struct_64_with_sig, b'PK\x07\x08'),
+                (dd_struct_64_with_sig, dd_optional_sig),
             )
 
             for dd_struct, expected_signature in checks:
