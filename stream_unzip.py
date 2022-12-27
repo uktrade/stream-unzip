@@ -29,6 +29,7 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
         # - _yield_all: yields chunks as they come up (often for a "body")
         # - _get_num: returns a single `bytes` of a given length
         # - _return_unused: puts "unused" bytes "back", to be retrieved by a yield/get call
+        # - _get_offset_from_start: get the zero-indexed offset from the start of the stream
 
         chunk = b''
         offset = 0
