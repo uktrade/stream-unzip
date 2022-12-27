@@ -17,6 +17,13 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
     zip64_size_signature = b'\x01\x00'
     aes_extra_signature = b'\x01\x99'
     central_directory_signature = b'PK\x01\x02'
+    unsigned_short = Struct('<H')
+    unsigned_long_long = Struct('<Q')
+
+    dd_struct_32 = Struct('<0sIII')
+    dd_struct_32_with_sig = Struct('<4sIII')
+    dd_struct_64 = Struct('<0sIQQ')
+    dd_struct_64_with_sig = Struct('<4sIQQ')
 
     def next_or_truncated_error(it):
         try:
@@ -144,7 +151,7 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
             while extra_offset <= len(extra) - 4:
                 extra_signature = extra[extra_offset:extra_offset+2]
                 extra_offset += 2
-                extra_data_size, = Struct('<H').unpack(extra[extra_offset:extra_offset+2])
+                extra_data_size, = unsigned_short.unpack(extra[extra_offset:extra_offset+2])
                 extra_offset += 2
                 extra_data = extra[extra_offset:extra_offset+extra_data_size]
                 extra_offset += extra_data_size
@@ -293,11 +300,11 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
             dd = b''
 
             checks = ((
-                (Struct('<0sIII'), b''),
-                (Struct('<4sIII'), b'PK\x07\x08'),
+                (dd_struct_32, b''),
+                (dd_struct_32_with_sig, b'PK\x07\x08'),
             ) if not must_treat_as_zip64 else ()) + (
-                (Struct('<0sIQQ'), b''),
-                (Struct('<4sIQQ'), b'PK\x07\x08'),
+                (dd_struct_64, b''),
+                (dd_struct_64_with_sig, b'PK\x07\x08'),
             )
 
             for dd_struct, expected_signature in checks:
@@ -353,7 +360,7 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
             raise MissingAESPasswordError()
 
         compression = \
-            Struct('<H').unpack(aes_extra[5:7])[0] if is_aes_encrypted else \
+            unsigned_short.unpack(aes_extra[5:7])[0] if is_aes_encrypted else \
             compression_raw
 
         if compression not in (0, 8, 9):
@@ -365,12 +372,12 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
 
         compressed_size = \
             None if has_data_descriptor and compression in (8, 9) else \
-            Struct('<Q').unpack(zip64_extra[8:16])[0] if is_sure_zip64 else \
+            unsigned_long_long.unpack(zip64_extra[8:16])[0] if is_sure_zip64 else \
             compressed_size_raw
 
         uncompressed_size = \
             None if has_data_descriptor and compression in (8, 9) else \
-            Struct('<Q').unpack(zip64_extra[:8])[0] if is_sure_zip64 else \
+            unsigned_long_long.unpack(zip64_extra[:8])[0] if is_sure_zip64 else \
             uncompressed_size_raw
 
         decompressor = \
