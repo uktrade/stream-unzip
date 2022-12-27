@@ -305,7 +305,12 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
 
                 dd += get_num(max(dd_struct.size - len(dd), 0))
                 signature_dd, crc_32_dd, compressed_size_dd, uncompressed_size_dd = dd_struct.unpack(dd)
-                matches = (signature_dd == expected_signature, is_aes_2_encrypted or crc_32_dd == crc_32_data, compressed_size_dd == compressed_size_data, uncompressed_size_dd == uncompressed_size_data)
+                matches = (
+                    signature_dd == expected_signature,
+                    is_aes_2_encrypted or crc_32_dd == crc_32_data,
+                    compressed_size_dd == compressed_size_data,
+                    uncompressed_size_dd == uncompressed_size_data,
+                )
                 best_matches = max(best_matches, matches, key=lambda t: t.count(True))
 
             if not best_matches[0]:
