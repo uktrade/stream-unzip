@@ -44,22 +44,6 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
         offset_from_start = 0
         it = iter(iterable)
 
-        def _yield_all():
-            nonlocal chunk, offset, offset_from_start
-
-            while True:
-                if offset == len(chunk):
-                    try:
-                        chunk = next(it)
-                    except StopIteration:
-                        break
-                    else:
-                        offset = 0
-                to_yield = min(len(chunk) - offset, chunk_size)
-                offset = offset + to_yield
-                offset_from_start += to_yield
-                yield chunk[offset - to_yield:offset]
-
         def _yield_num(num):
             nonlocal chunk, offset, offset_from_start
 
@@ -72,6 +56,12 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
                 num -= to_yield
                 offset_from_start += to_yield
                 yield chunk[offset - to_yield:offset]
+
+        def _yield_all():
+            try:
+                yield from _yield_num(float('inf'))
+            except TruncatedDataError:
+                pass
 
         def _get_num(num):
             return b''.join(_yield_num(num))
