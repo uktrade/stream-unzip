@@ -21,10 +21,10 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
     unsigned_long_long = Struct('<Q')
 
     dd_optional_signature = b'PK\x07\x08'
-    dd_struct_32 = Struct('<0sIII')
-    dd_struct_32_with_sig = Struct('<4sIII')
-    dd_struct_64 = Struct('<0sIQQ')
-    dd_struct_64_with_sig = Struct('<4sIQQ')
+    dd_struct_32 = Struct('<0sIII4s')
+    dd_struct_32_with_sig = Struct('<4sIII4s')
+    dd_struct_64 = Struct('<0sIQQ4s')
+    dd_struct_64_with_sig = Struct('<4sIQQ4s')
 
     def next_or_truncated_error(it):
         try:
@@ -36,21 +36,28 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
         # Return functions to return/"replace" bytes from/to the iterable
         # - _yield_all: yields chunks as they come up (often for a "body")
         # - _get_num: returns a single `bytes` of a given length
-        # - _return_unused: puts "unused" bytes "back", to be retrieved by a yield/get call
+        # - _return_num_unused: puts a number of "unused" bytes "back", to be retrieved by a yield/get call
+        # - _return_bytes_unused: return a bytes instance "back" into the stream, to be retrieved later
         # - _get_offset_from_start: get the zero-indexed offset from the start of the stream
 
         chunk = b''
         offset = 0
         offset_from_start = 0
+        queue = list()  # Will typically have at most 1 element, so a list is fine
         it = iter(iterable)
+
+        def _next():
+            try:
+                return queue.pop(0)
+            except IndexError:
+                return (next_or_truncated_error(it), 0)
 
         def _yield_num(num):
             nonlocal chunk, offset, offset_from_start
 
             while num:
                 if offset == len(chunk):
-                    chunk = next_or_truncated_error(it)
-                    offset = 0
+                    chunk, offset = _next()
                 to_yield = min(num, len(chunk) - offset, chunk_size)
                 offset = offset + to_yield
                 num -= to_yield
@@ -66,15 +73,22 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
         def _get_num(num):
             return b''.join(_yield_num(num))
 
-        def _return_unused(num_unused):
+        def _return_num_unused(num_unused):
             nonlocal offset, offset_from_start
             offset -= num_unused
             offset_from_start -= num_unused
 
+        def _return_bytes_unused(bytes_unused):
+            nonlocal chunk, offset, offset_from_start
+            queue.insert(0, (chunk, offset))
+            chunk = bytes_unused
+            offset = 0
+            offset_from_start -= len(bytes_unused)
+
         def _get_offset_from_start():
             return offset_from_start
 
-        return _yield_all, _get_num, _return_unused, _get_offset_from_start
+        return _yield_all, _get_num, _return_num_unused, _return_bytes_unused, _get_offset_from_start
 
     def get_decompressor_none(num_bytes):
         num_decompressed = 0
@@ -130,7 +144,7 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
 
         return _decompress, is_done, num_bytes_unconsumed
 
-    def yield_file(yield_all, get_num, return_unused, get_offset_from_start):
+    def yield_file(yield_all, get_num, return_num_unused, return_bytes_unused, get_offset_from_start):
 
         def get_flag_bits(flags):
             for b in flags:
@@ -199,7 +213,7 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
             while not is_done():
                 yield from decompress(decrypt(next_or_truncated_error(chunks)))
 
-            return_unused(num_unused())
+            return_num_unused(num_unused())
 
         def decrypt_aes_decompress(chunks, decompress, is_done, num_unused, key_length_raw):
             try:
@@ -225,7 +239,7 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
                 yield from decompress(decrypter.decrypt(chunk))
                 hmac.update(chunk[:len(chunk) - num_unused()])
 
-            return_unused(num_unused())
+            return_num_unused(num_unused())
 
             if get_num(10) != hmac.digest()[:10]:
                 raise HMACIntegrityError()
@@ -234,7 +248,7 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
             while not is_done():
                 yield from decompress(next_or_truncated_error(chunks))
 
-            return_unused(num_unused())
+            return_num_unused(num_unused())
 
         def read_data_and_count_and_crc32(chunks):
             offset_1 = None
@@ -272,8 +286,9 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
 
         def checked_from_data_descriptor(chunks, is_sure_zip64, is_aes_2_encrypted, get_crc_32, get_compressed_size, get_uncompressed_size):
             # The format of the data descriptor is unfortunately not known with absolute certainty in all cases
-            # so we we use a heuristic to detect it - using the known crc32 value, compressed size, and uncompressed
-            # size of the data to inch our way forward through the stream until we get a match
+            # so we we use a heuristic to detect it - using the known crc32 value, compressed size, uncompressed
+            # size of the data, and possible signature of the next section in the stream to inch our way forward
+            # through the stream until we get a match
             #
             # This isn't perfect - it could just happen to match too soon, or in the case of errors in the
             # stream, match too late. Either of these cases could cause issues in further processing.
@@ -286,7 +301,7 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
             crc_32_data = get_crc_32()
             compressed_size_data = get_compressed_size()
             uncompressed_size_data = get_uncompressed_size()
-            best_matches = (False, False, False, False)
+            best_matches = (False, False, False, False, False)
             must_treat_as_zip64 = is_sure_zip64 or compressed_size_data > 0xFFFFFFFF or uncompressed_size_data > 0xFFFFFFFF
             dd = b''
 
@@ -299,16 +314,17 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
             )
 
             for dd_struct, expected_signature in checks:
-                if best_matches == (True, True, True, True):
+                if best_matches == (True, True, True, True, True):
                     break
 
                 dd += get_num(max(dd_struct.size - len(dd), 0))
-                signature_dd, crc_32_dd, compressed_size_dd, uncompressed_size_dd = dd_struct.unpack(dd)
+                signature_dd, crc_32_dd, compressed_size_dd, uncompressed_size_dd, next_signature = dd_struct.unpack(dd)
                 matches = (
                     signature_dd == expected_signature,
                     is_aes_2_encrypted or crc_32_dd == crc_32_data,
                     compressed_size_dd == compressed_size_data,
                     uncompressed_size_dd == uncompressed_size_data,
+                    next_signature in (local_file_header_signature, central_directory_signature),
                 )
                 best_matches = max(best_matches, matches, key=lambda t: t.count(True))
 
@@ -323,6 +339,11 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
 
             if not best_matches[3]:
                 raise UncompressedSizeIntegrityError()
+
+            if not best_matches[4]:
+                raise UnexpectedSignatureError(next_signature)
+
+            return_bytes_unused(next_signature)
 
         version, flags, compression_raw, mod_time, mod_date, crc_32_expected, compressed_size_raw, uncompressed_size_raw, file_name_len, extra_field_len = \
             local_file_header_struct.unpack(get_num(local_file_header_struct.size))
@@ -390,12 +411,12 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
         return file_name, uncompressed_size, checked_bytes
 
     def all():
-        yield_all, get_num, return_unused, get_offset_from_start = get_byte_readers(zipfile_chunks)
+        yield_all, get_num, return_num_unused, return_bytes_unused, get_offset_from_start = get_byte_readers(zipfile_chunks)
 
         while True:
             signature = get_num(len(local_file_header_signature))
             if signature == local_file_header_signature:
-                yield yield_file(yield_all, get_num, return_unused, get_offset_from_start)
+                yield yield_file(yield_all, get_num, return_num_unused, return_bytes_unused, get_offset_from_start)
             elif signature == central_directory_signature:
                 for _ in yield_all():
                     pass
