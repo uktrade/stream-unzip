@@ -287,14 +287,11 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
         def checked_from_data_descriptor(chunks, is_sure_zip64, is_aes_2_encrypted, get_crc_32, get_compressed_size, get_uncompressed_size):
             # The format of the data descriptor is unfortunately not known with absolute certainty in all cases
             # so we we use a heuristic to detect it - using the known crc32 value, compressed size, uncompressed
-            # size of the data, and possible signature of the next section in the stream to inch our way forward
-            # through the stream until we get a match
+            # size of the data, and possible signature of the next section in the stream. There are 4 possible
+            # formats, and we choose the longest one that matches
             #
-            # This isn't perfect - it could just happen to match too soon, or in the case of errors in the
-            # stream, match too late. Either of these cases could cause issues in further processing.
-            #
-            # The heuristic could potentially be improved to reduce the chance of these - but it's suspected
-            # that they are already fairly pathological/unlikely
+            # Strongly inspired by Mark Adler's unzip - see his reasoning for this at
+            # https://github.com/madler/unzip/commit/af0d07f95809653b669d88aa0f424c6d5aa48ba0
 
             yield from chunks
 
@@ -303,22 +300,19 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
             uncompressed_size_data = get_uncompressed_size()
             best_matches = (False, False, False, False, False)
             must_treat_as_zip64 = is_sure_zip64 or compressed_size_data > 0xFFFFFFFF or uncompressed_size_data > 0xFFFFFFFF
-            dd = b''
 
-            checks = ((
-                (dd_struct_32, b''),
-                (dd_struct_32_with_sig, dd_optional_signature),
-            ) if not must_treat_as_zip64 else ()) + (
-                (dd_struct_64, b''),
+            checks = (
                 (dd_struct_64_with_sig, dd_optional_signature),
-            )
+                (dd_struct_64, b''),
+            ) + ((
+                (dd_struct_32_with_sig, dd_optional_signature),
+                (dd_struct_32, b''),
+            ) if not must_treat_as_zip64 else ())
+
+            dd = get_num(checks[0][0].size)
 
             for dd_struct, expected_signature in checks:
-                if best_matches == (True, True, True, True, True):
-                    break
-
-                dd += get_num(max(dd_struct.size - len(dd), 0))
-                signature_dd, crc_32_dd, compressed_size_dd, uncompressed_size_dd, next_signature = dd_struct.unpack(dd)
+                signature_dd, crc_32_dd, compressed_size_dd, uncompressed_size_dd, next_signature = dd_struct.unpack(dd[:dd_struct.size])
                 matches = (
                     signature_dd == expected_signature,
                     is_aes_2_encrypted or crc_32_dd == crc_32_data,
@@ -327,6 +321,9 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
                     next_signature in (local_file_header_signature, central_directory_signature),
                 )
                 best_matches = max(best_matches, matches, key=lambda t: t.count(True))
+
+                if best_matches == (True, True, True, True, True):
+                    break
 
             if not best_matches[0]:
                 raise UnexpectedSignatureError()
@@ -343,7 +340,7 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
             if not best_matches[4]:
                 raise UnexpectedSignatureError(next_signature)
 
-            return_bytes_unused(next_signature)
+            return_bytes_unused(dd[dd_struct.size - 4:])  # 4 is the length of next signature we have already taken
 
         version, flags, compression_raw, mod_time, mod_date, crc_32_expected, compressed_size_raw, uncompressed_size_raw, file_name_len, extra_field_len = \
             local_file_header_struct.unpack(get_num(local_file_header_struct.size))
