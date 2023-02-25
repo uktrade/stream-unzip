@@ -1,0 +1,20 @@
+site_name: stream-unzip
+repo_url: https://github.com/uktrade/stream-unzip
+theme:
+  name: tech_docs_template
+  logo: assets/dit-logo.png
+  favicon: assets/dit-favicon.png
+  features:
+    - content.code.copy
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+plugins:
+  - material/search
+nav:
+    - Introduction: 'index.md'
