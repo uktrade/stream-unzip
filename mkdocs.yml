@@ -19,3 +19,4 @@ plugins:
 nav:
     - Introduction: 'index.md'
     - Getting started: 'getting-started.md'
+    - Exceptions: 'exceptions.md'
