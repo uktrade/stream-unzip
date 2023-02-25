@@ -67,11 +67,11 @@ Exceptions raised by the source iterable are passed through `stream_unzip` uncha
 
             - **HMACIntegrityError**
 
-              The HMAC integrity check on AES encrypted bytes failed
+                The HMAC integrity check on AES encrypted bytes failed
 
             - **CRC32IntegrityError**
 
-              The CRC32 integrity check on decrypted and decompressed bytes failed.
+                The CRC32 integrity check on decrypted and decompressed bytes failed.
 
           - **SizeIntegrityError**
 
@@ -113,4 +113,4 @@ Exceptions raised by the source iterable are passed through `stream_unzip` uncha
 
             - **InvalidAESKeyLengthError**
 
-              AES key length specified in the ZIP is not any of 1, 2, or 3 (which correspond to 128, 192, and 256 bits respectively).
+                AES key length specified in the ZIP is not any of 1, 2, or 3 (which correspond to 128, 192, and 256 bits respectively).
