@@ -1,4 +1,5 @@
 site_name: stream-unzip
+repo_name: uktrade/stream-unzip
 repo_url: https://github.com/uktrade/stream-unzip
 theme:
   name: tech_docs_template
