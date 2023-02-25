@@ -19,98 +19,98 @@ Exceptions raised by the source iterable are passed through `stream_unzip` uncha
 
         Base class for errors relating to invalid arguments
 
-      - **PasswordError**
+        - **PasswordError**
 
-        - **MissingPasswordError**
+          - **MissingPasswordError**
 
-            A file requires a password, but it was not supplied.
+              A file requires a password, but it was not supplied.
 
-            - **MissingZipCryptoPasswordError**
+              - **MissingZipCryptoPasswordError**
 
-                A file is legacy (ZipCrypto/Zip 2.0) encrypted, but a password was not supplied.
+                  A file is legacy (ZipCrypto/Zip 2.0) encrypted, but a password was not supplied.
 
-            - **MissingAESPasswordError**
+              - **MissingAESPasswordError**
 
-                A file is AES encrypted, but a password was not supplied.
+                  A file is AES encrypted, but a password was not supplied.
 
-        - **IncorrectPasswordError**
+          - **IncorrectPasswordError**
 
-            An incorrect password was supplied. Note that due to nature of the ZIP file format, some incorrect passwords would not raise this exception, and instead raise a `DataError`, or even in pathalogical cases, not raise any exception.
+              An incorrect password was supplied. Note that due to nature of the ZIP file format, some incorrect passwords would not raise this exception, and instead raise a `DataError`, or even in pathalogical cases, not raise any exception.
 
-            - **IncorrectZipCryptoPasswordError**
+              - **IncorrectZipCryptoPasswordError**
 
-              An incorrect password was supplied for a legacy (ZipCrypto/Zip 2.0) encrypted file.
+                An incorrect password was supplied for a legacy (ZipCrypto/Zip 2.0) encrypted file.
 
-            - **IncorrectAESPasswordError**
+              - **IncorrectAESPasswordError**
 
-              An incorrect password was supplied for an AES encrypted file.
+                An incorrect password was supplied for an AES encrypted file.
 
-      - **DataError**
+        - **DataError**
 
-        An issue with the ZIP bytes themselves was encountered.
+            An issue with the ZIP bytes themselves was encountered.
 
-        - **UnsupportedFeatureError**
+            - **UnsupportedFeatureError**
 
-            A file in the ZIP uses features that are unsupported.
+                A file in the ZIP uses features that are unsupported.
 
-            - **UnsupportedFlagsError**
+                - **UnsupportedFlagsError**
 
-            - **UnsupportedCompressionTypeError**
+                - **UnsupportedCompressionTypeError**
 
-        - **UncompressError**
+            - **UncompressError**
 
-          - **DeflateError**
+              - **DeflateError**
 
-            An error in the deflate-compressed data meant it could not be decompressed.
+                An error in the deflate-compressed data meant it could not be decompressed.
 
-        - **IntegrityError**
+            - **IntegrityError**
 
-            - **HMACIntegrityError**
+                - **HMACIntegrityError**
 
-                The HMAC integrity check on AES encrypted bytes failed
+                    The HMAC integrity check on AES encrypted bytes failed
 
-            - **CRC32IntegrityError**
+                - **CRC32IntegrityError**
 
-                The CRC32 integrity check on decrypted and decompressed bytes failed.
+                    The CRC32 integrity check on decrypted and decompressed bytes failed.
 
-          - **SizeIntegrityError**
+              - **SizeIntegrityError**
 
-            - **UncompressedSizeIntegrityError**
+                - **UncompressedSizeIntegrityError**
 
-                The amount of uncompressed bytes of a member file did not match its metadata.
+                    The amount of uncompressed bytes of a member file did not match its metadata.
 
-            - **CompressedSizeIntegrityError**
+                - **CompressedSizeIntegrityError**
 
-                The amount of compressed bytes of a member file did not match its metadata.
+                    The amount of compressed bytes of a member file did not match its metadata.
 
-        - **TruncatedDataError**
+            - **TruncatedDataError**
 
-            The stream of bytes ended unexpectedly.
+                The stream of bytes ended unexpectedly.
 
-        - **UnexpectedSignatureError**
+            - **UnexpectedSignatureError**
 
-            Each section of a ZIP file starts with a _signature_, and an unexpected one was encountered.
+                Each section of a ZIP file starts with a _signature_, and an unexpected one was encountered.
 
-        - **MissingExtraError**
+            - **MissingExtraError**
 
-            Metadata known as *extra* that some ZIP files require is missing.
+                Metadata known as *extra* that some ZIP files require is missing.
 
-            - **MissingZip64ExtraError**
+                - **MissingZip64ExtraError**
 
-            - **MissingAESExtraError**
+                - **MissingAESExtraError**
 
-        - **TruncatedExtraError**
+            - **TruncatedExtraError**
 
-            Metadata known as *extra* that some ZIP files require is present, but too short.
+                Metadata known as *extra* that some ZIP files require is present, but too short.
 
-            - **TruncatedZip64ExtraError**
+                - **TruncatedZip64ExtraError**
 
-            - **TruncatedAESExtraError**
+                - **TruncatedAESExtraError**
 
-        - **InvalidExtraError**
+            - **InvalidExtraError**
 
-            Metadata known as *extra* that some ZIP files require is present, long enough, but holds an invalid value.
+                Metadata known as *extra* that some ZIP files require is present, long enough, but holds an invalid value.
 
-            - **InvalidAESKeyLengthError**
+                - **InvalidAESKeyLengthError**
 
-                AES key length specified in the ZIP is not any of 1, 2, or 3 (which correspond to 128, 192, and 256 bits respectively).
+                    AES key length specified in the ZIP is not any of 1, 2, or 3 (which correspond to 128, 192, and 256 bits respectively).
