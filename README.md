@@ -4,7 +4,7 @@
 
 Python function to stream unzip all the files in a ZIP archive, without loading the entire ZIP file into memory or any of its uncompressed files.
 
-To create ZIP files on the fly try [stream-zip](https://stream-zip.docs.data.trade.gov.uk/).
+To create ZIP files on the fly try [stream-zip](https://github.com/uktrade/stream-zip).
 
 
 ## Features
