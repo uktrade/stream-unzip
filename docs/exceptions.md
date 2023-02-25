@@ -39,11 +39,11 @@ Exceptions raised by the source iterable are passed through `stream_unzip` uncha
 
               - **IncorrectZipCryptoPasswordError**
 
-                An incorrect password was supplied for a legacy (ZipCrypto/Zip 2.0) encrypted file.
+                  An incorrect password was supplied for a legacy (ZipCrypto/Zip 2.0) encrypted file.
 
               - **IncorrectAESPasswordError**
 
-                An incorrect password was supplied for an AES encrypted file.
+                  An incorrect password was supplied for an AES encrypted file.
 
         - **DataError**
 
