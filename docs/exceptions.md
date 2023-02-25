@@ -13,7 +13,7 @@ Exceptions raised by the source iterable are passed through `stream_unzip` uncha
 
         - **UnfinishedIterationError**
 
-          The unzipped chunks iterator of a member file has not been iterated to completion.
+            The unzipped chunks iterator of a member file has not been iterated to completion.
 
     - **UnzipValueError** (also inherits from the **ValueError** built-in)
 
@@ -27,11 +27,11 @@ Exceptions raised by the source iterable are passed through `stream_unzip` uncha
 
             - **MissingZipCryptoPasswordError**
 
-              A file is legacy (ZipCrypto/Zip 2.0) encrypted, but a password was not supplied.
+                A file is legacy (ZipCrypto/Zip 2.0) encrypted, but a password was not supplied.
 
             - **MissingAESPasswordError**
 
-              A file is AES encrypted, but a password was not supplied.
+                A file is AES encrypted, but a password was not supplied.
 
         - **IncorrectPasswordError**
 
