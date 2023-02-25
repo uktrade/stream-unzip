@@ -1,8 +1,19 @@
+## Prerequisites
+
+Python 3.7+
+
+
 ## Installation
+
+You can install stream-unzip and its dependencies from [PyPI](https://pypi.org/project/stream-zip/) using pip.
 
 ```bash
 pip install stream-unzip
 ```
+
+This installs the latest version of stream-unzip, and the latest compatible version of all of its dependencies.
+
+If you regularly install stream-unzip, such as during application deployment, to avoid unexpected changes as new versions are released, you can pin to specific versions. [Poetry](https://python-poetry.org/) or [pip-tools](https://pip-tools.readthedocs.io/en/latest/) are popular tools that can be used for this.
 
 
 ## Usage
