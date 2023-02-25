@@ -11,9 +11,9 @@ Exceptions raised by the source iterable are passed through `stream_unzip` uncha
 
     - **InvalidOperationError**
 
-      - **UnfinishedIterationError**
+        - **UnfinishedIterationError**
 
-        The unzipped chunks iterator of a member file has not been iterated to completion.
+          The unzipped chunks iterator of a member file has not been iterated to completion.
 
     - **UnzipValueError** (also inherits from the **ValueError** built-in)
 
@@ -25,25 +25,25 @@ Exceptions raised by the source iterable are passed through `stream_unzip` uncha
 
             A file requires a password, but it was not supplied.
 
-          - **MissingZipCryptoPasswordError**
+            - **MissingZipCryptoPasswordError**
 
-            A file is legacy (ZipCrypto/Zip 2.0) encrypted, but a password was not supplied.
+              A file is legacy (ZipCrypto/Zip 2.0) encrypted, but a password was not supplied.
 
-          - **MissingAESPasswordError**
+            - **MissingAESPasswordError**
 
-            A file is AES encrypted, but a password was not supplied.
+              A file is AES encrypted, but a password was not supplied.
 
         - **IncorrectPasswordError**
 
             An incorrect password was supplied. Note that due to nature of the ZIP file format, some incorrect passwords would not raise this exception, and instead raise a `DataError`, or even in pathalogical cases, not raise any exception.
 
-          - **IncorrectZipCryptoPasswordError**
+            - **IncorrectZipCryptoPasswordError**
 
-            An incorrect password was supplied for a legacy (ZipCrypto/Zip 2.0) encrypted file.
+              An incorrect password was supplied for a legacy (ZipCrypto/Zip 2.0) encrypted file.
 
-          - **IncorrectAESPasswordError**
+            - **IncorrectAESPasswordError**
 
-            An incorrect password was supplied for an AES encrypted file.
+              An incorrect password was supplied for an AES encrypted file.
 
       - **DataError**
 
@@ -53,9 +53,9 @@ Exceptions raised by the source iterable are passed through `stream_unzip` uncha
 
             A file in the ZIP uses features that are unsupported.
 
-          - **UnsupportedFlagsError**
+            - **UnsupportedFlagsError**
 
-          - **UnsupportedCompressionTypeError**
+            - **UnsupportedCompressionTypeError**
 
         - **UncompressError**
 
@@ -65,13 +65,13 @@ Exceptions raised by the source iterable are passed through `stream_unzip` uncha
 
         - **IntegrityError**
 
-          - **HMACIntegrityError**
+            - **HMACIntegrityError**
 
-            The HMAC integrity check on AES encrypted bytes failed
+              The HMAC integrity check on AES encrypted bytes failed
 
-          - **CRC32IntegrityError**
+            - **CRC32IntegrityError**
 
-            The CRC32 integrity check on decrypted and decompressed bytes failed.
+              The CRC32 integrity check on decrypted and decompressed bytes failed.
 
           - **SizeIntegrityError**
 
