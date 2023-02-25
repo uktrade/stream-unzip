@@ -17,13 +17,13 @@ Exceptions raised by the source iterable are passed through `stream_unzip` uncha
 
     - **UnzipValueError** (also inherits from the **ValueError** built-in)
 
-      Base class for errors relating to invalid arguments
+        Base class for errors relating to invalid arguments
 
       - **PasswordError**
 
         - **MissingPasswordError**
 
-          A file requires a password, but it was not supplied.
+            A file requires a password, but it was not supplied.
 
           - **MissingZipCryptoPasswordError**
 
@@ -35,7 +35,7 @@ Exceptions raised by the source iterable are passed through `stream_unzip` uncha
 
         - **IncorrectPasswordError**
 
-          An incorrect password was supplied. Note that due to nature of the ZIP file format, some incorrect passwords would not raise this exception, and instead raise a `DataError`, or even in pathalogical cases, not raise any exception.
+            An incorrect password was supplied. Note that due to nature of the ZIP file format, some incorrect passwords would not raise this exception, and instead raise a `DataError`, or even in pathalogical cases, not raise any exception.
 
           - **IncorrectZipCryptoPasswordError**
 
@@ -51,7 +51,7 @@ Exceptions raised by the source iterable are passed through `stream_unzip` uncha
 
         - **UnsupportedFeatureError**
 
-          A file in the ZIP uses features that are unsupported.
+            A file in the ZIP uses features that are unsupported.
 
           - **UnsupportedFlagsError**
 
@@ -77,35 +77,35 @@ Exceptions raised by the source iterable are passed through `stream_unzip` uncha
 
             - **UncompressedSizeIntegrityError**
 
-              The amount of uncompressed bytes of a member file did not match its metadata.
+                The amount of uncompressed bytes of a member file did not match its metadata.
 
             - **CompressedSizeIntegrityError**
 
-              The amount of compressed bytes of a member file did not match its metadata.
+                The amount of compressed bytes of a member file did not match its metadata.
 
         - **TruncatedDataError**
 
-          The stream of bytes ended unexpectedly.
+            The stream of bytes ended unexpectedly.
 
         - **UnexpectedSignatureError**
 
-          Each section of a ZIP file starts with a _signature_, and an unexpected one was encountered.
+            Each section of a ZIP file starts with a _signature_, and an unexpected one was encountered.
 
         - **MissingExtraError**
 
-          Metadata known as *extra* that some ZIP files require is missing.
+            Metadata known as *extra* that some ZIP files require is missing.
 
-          - **MissingZip64ExtraError**
+            - **MissingZip64ExtraError**
 
-          - **MissingAESExtraError**
+            - **MissingAESExtraError**
 
         - **TruncatedExtraError**
 
-          Metadata known as *extra* that some ZIP files require is present, but too short.
+            Metadata known as *extra* that some ZIP files require is present, but too short.
 
-          - **TruncatedZip64ExtraError**
+            - **TruncatedZip64ExtraError**
 
-          - **TruncatedAESExtraError**
+            - **TruncatedAESExtraError**
 
         - **InvalidExtraError**
 
