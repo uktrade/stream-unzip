@@ -14,7 +14,10 @@ setuptools.setup(
     description='Python function to stream unzip all the files in a ZIP archive, without loading the entire ZIP file into memory or any of its uncompressed files',
     long_description=long_description(),
     long_description_content_type='text/markdown',
-    url='https://github.com/uktrade/stream-unzip',
+    project_urls={
+        'Documentation': 'https://stream-unzip.docs.data.trade.gov.uk/',
+        'Source': 'https://github.com/uktrade/stream-unzip',
+    },
     classifiers=[
         'Programming Language :: Python :: 3',
         'License :: OSI Approved :: MIT License',
