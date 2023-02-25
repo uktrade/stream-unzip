@@ -21,29 +21,29 @@ Exceptions raised by the source iterable are passed through `stream_unzip` uncha
 
         - **PasswordError**
 
-          - **MissingPasswordError**
+            - **MissingPasswordError**
 
-              A file requires a password, but it was not supplied.
+                A file requires a password, but it was not supplied.
 
-              - **MissingZipCryptoPasswordError**
+                - **MissingZipCryptoPasswordError**
 
-                  A file is legacy (ZipCrypto/Zip 2.0) encrypted, but a password was not supplied.
+                    A file is legacy (ZipCrypto/Zip 2.0) encrypted, but a password was not supplied.
 
-              - **MissingAESPasswordError**
+                - **MissingAESPasswordError**
 
-                  A file is AES encrypted, but a password was not supplied.
+                    A file is AES encrypted, but a password was not supplied.
 
-          - **IncorrectPasswordError**
+            - **IncorrectPasswordError**
 
-              An incorrect password was supplied. Note that due to nature of the ZIP file format, some incorrect passwords would not raise this exception, and instead raise a `DataError`, or even in pathalogical cases, not raise any exception.
+                An incorrect password was supplied. Note that due to nature of the ZIP file format, some incorrect passwords would not raise this exception, and instead raise a `DataError`, or even in pathalogical cases, not raise any exception.
 
-              - **IncorrectZipCryptoPasswordError**
+                - **IncorrectZipCryptoPasswordError**
 
-                  An incorrect password was supplied for a legacy (ZipCrypto/Zip 2.0) encrypted file.
+                    An incorrect password was supplied for a legacy (ZipCrypto/Zip 2.0) encrypted file.
 
-              - **IncorrectAESPasswordError**
+                - **IncorrectAESPasswordError**
 
-                  An incorrect password was supplied for an AES encrypted file.
+                    An incorrect password was supplied for an AES encrypted file.
 
         - **DataError**
 
