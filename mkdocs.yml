@@ -25,3 +25,5 @@ nav:
     - Usage:
       - Getting started: 'getting-started.md'
       - Exceptions: 'exceptions.md'
+    - Contributing:
+      - How to contribute: 'contributing.md'
