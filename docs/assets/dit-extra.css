@@ -1,0 +1,7 @@
+/* Without this the spacing on the active item in the left hand nav is
+   a bit strange. Also, the default material design CSS uses a lot of
+   selectors, hence to override them we also need the selectors */
+.md-nav__item--section > .md-nav > .md-nav__list > .md-nav__item--active {
+	margin-left:  0;
+	padding-left: 3px;
+}

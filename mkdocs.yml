@@ -7,6 +7,9 @@ theme:
   favicon: assets/dit-favicon.png
   features:
     - content.code.copy
+    - navigation.sections
+extra_css:
+  - assets/dit-extra.css
 markdown_extensions:
   - pymdownx.highlight:
       anchor_linenums: true
@@ -19,5 +22,6 @@ plugins:
   - material/search
 nav:
     - Introduction: 'index.md'
-    - Getting started: 'getting-started.md'
-    - Exceptions: 'exceptions.md'
+    - Usage:
+      - Getting started: 'getting-started.md'
+      - Exceptions: 'exceptions.md'
