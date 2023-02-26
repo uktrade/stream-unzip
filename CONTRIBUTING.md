@@ -61,12 +61,12 @@ The source of the documentation is in the [docs/](https://github.com/uktrade/str
 
 Changes are then submitted via a Pull Request (PR). To do this:
 
-1. Decide on a short hyphen-separated descriptive name for your change, prefixed with `docs/` for example `docs/add-django-recipe`.
+1. Decide on a short hyphen-separated descriptive name for your change, prefixed with `docs/` for example `docs/add-example`.
 
 2. Make a branch using this descriptive name.
 
     ```bash
-    git checkout -b docs/add-django-recipe
+    git checkout -b docs/add-example
     cd stream-unzip
     ```
 
@@ -82,9 +82,9 @@ Changes are then submitted via a Pull Request (PR). To do this:
 5. Commit your change and push to your fork. Ideally the commit message will follow the [Conventional Commit specification](https://www.conventionalcommits.org/).
 
     ```bash
-    git add docs/recipies.md  # Repeat for each file changed
-    git commit -m "docs: added a Django recipe"
-    gir push origin docs/add-django-recipe
+    git add docs/getting-started.md  # Repeat for each file changed
+    git commit -m "docs: add an example"
+    gir push origin docs/add-example
     ```
 
 6. Raise a PR at [https://github.com/uktrade/stream-unzip/pulls](https://github.com/uktrade/stream-unzip/pulls) against the `main` branch in stream-unzip.
