@@ -24,6 +24,8 @@ In addition to being memory efficient, stream-unzip supports:
 - Legacy-encrypted ZIP files. This is also known as ZipCrypto/Zip 2.0.
 
 - ZIP files created by Java's ZipOutputStream that are larger than 4GiB. At the time of writing libarchive-based stream readers cannot read these without error.
+
+- BZip2-compressed ZIPs.
 <!-- --8<-- [end:features] -->
 
 ---

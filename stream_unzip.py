@@ -1,5 +1,6 @@
 from functools import partial
 from struct import Struct
+import bz2
 import zlib
 
 from Crypto.Cipher import AES
@@ -143,6 +144,34 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
             yield from uncompressed_chunks((compressed_chunk,))
 
         return _decompress, is_done, num_bytes_unconsumed
+
+    def get_decompressor_bz2():
+        dobj = bz2.BZ2Decompressor()
+
+        def _decompress_single(compressed_chunk):
+            try:
+                return dobj.decompress(compressed_chunk, chunk_size)
+            except OSError as e:
+                raise BZ2Error() from e
+
+        def _decompress(compressed_chunk):
+            uncompressed_chunk = _decompress_single(compressed_chunk)
+            if uncompressed_chunk:
+                yield uncompressed_chunk
+
+            while not dobj.eof:
+                uncompressed_chunk = _decompress_single(b'')
+                if not uncompressed_chunk:
+                    break
+                yield uncompressed_chunk
+
+        def _is_done():
+            return dobj.eof
+
+        def _num_unused():
+            return len(dobj.unused_data)
+
+        return _decompress, _is_done, _num_unused
 
     def yield_file(yield_all, get_num, return_num_unused, return_bytes_unused, get_offset_from_start):
 
@@ -372,7 +401,7 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
             unsigned_short.unpack(aes_extra[5:7])[0] if is_aes_encrypted else \
             compression_raw
 
-        if compression not in (0, 8, 9):
+        if compression not in (0, 8, 9, 12):
             raise UnsupportedCompressionTypeError(compression)
 
         has_data_descriptor = flag_bits[3]
@@ -380,19 +409,20 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
         zip64_extra = get_extra_value(extra, not has_data_descriptor and is_sure_zip64, zip64_size_signature, MissingZip64ExtraError, 16, TruncatedZip64ExtraError)
 
         compressed_size = \
-            None if has_data_descriptor and compression in (8, 9) else \
+            None if has_data_descriptor and compression in (8, 9, 12) else \
             unsigned_long_long.unpack(zip64_extra[8:16])[0] if is_sure_zip64 else \
             compressed_size_raw
 
         uncompressed_size = \
-            None if has_data_descriptor and compression in (8, 9) else \
+            None if has_data_descriptor and compression in (8, 9, 12) else \
             unsigned_long_long.unpack(zip64_extra[:8])[0] if is_sure_zip64 else \
             uncompressed_size_raw
 
         decompressor = \
             get_decompressor_none(uncompressed_size) if compression == 0 else \
             get_decompressor_deflate() if compression == 8 else \
-            get_decompressor_deflate64()
+            get_decompressor_deflate64() if compression == 9 else \
+            get_decompressor_bz2()
 
         decompressed_bytes = \
             decrypt_weak_decompress(yield_all(), *decompressor) if is_weak_encrypted else \
@@ -445,6 +475,9 @@ class UncompressError(UnzipValueError):
     pass
 
 class DeflateError(UncompressError):
+    pass
+
+class BZ2Error(UncompressError):
     pass
 
 class UnsupportedFeatureError(DataError):
