@@ -116,7 +116,6 @@ Changes are then submitted via a Pull Request (PR). To do this:
 
     ```bash
     git checkout -b fix-a-bug-description
-    cd stream-unzip
     ```
 
 3. Make sure you can run existing tests locally
