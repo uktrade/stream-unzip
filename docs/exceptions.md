@@ -59,6 +59,10 @@ Exceptions raised by the source iterable are passed through `stream_unzip` uncha
 
             - **UncompressError**
 
+              - **BZ2Error**
+
+                An error in the bz2-compressed data meant it could not be decompressed.
+
               - **DeflateError**
 
                 An error in the deflate-compressed data meant it could not be decompressed.

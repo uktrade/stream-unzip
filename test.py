@@ -28,7 +28,7 @@ class TestStreamUnzip(unittest.TestCase):
         rnd = random.Random()
         rnd.seed(1)
 
-        methods = [zipfile.ZIP_DEFLATED, zipfile.ZIP_STORED]
+        methods = [zipfile.ZIP_BZIP2, zipfile.ZIP_DEFLATED, zipfile.ZIP_STORED]
         input_sizes = [1, 7, 65536]
         output_sizes = [1, 7, 65536]
 
