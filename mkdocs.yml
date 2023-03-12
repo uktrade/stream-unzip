@@ -8,8 +8,6 @@ theme:
   features:
     - content.code.copy
     - navigation.sections
-extra_css:
-  - assets/dit-extra.css
 markdown_extensions:
   - pymdownx.highlight:
       anchor_linenums: true

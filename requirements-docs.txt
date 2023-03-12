@@ -35,7 +35,7 @@ mkdocs-material==9.0.14
     # via mkdocs-tech-docs-template
 mkdocs-material-extensions==1.1.1
     # via mkdocs-material
-mkdocs-tech-docs-template==0.0.20
+mkdocs-tech-docs-template==0.0.25
     # via -r requirements-docs.in
 packaging==23.0
     # via mkdocs
