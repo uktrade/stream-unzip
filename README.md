@@ -30,4 +30,4 @@ In addition to being memory efficient, stream-unzip supports:
 
 ---
 
-Visit the [stream-unzip documentation](https://stream-unzip.docs.data.trade.gov.uk/) for usage instructions.
+Visit the [stream-unzip documentation](https://stream-unzip.docs.trade.gov.uk/) for usage instructions.
