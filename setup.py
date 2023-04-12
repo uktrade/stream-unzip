@@ -15,7 +15,7 @@ setuptools.setup(
     long_description=long_description(),
     long_description_content_type='text/markdown',
     project_urls={
-        'Documentation': 'https://stream-unzip.docs.data.trade.gov.uk/',
+        'Documentation': 'https://stream-unzip.docs.trade.gov.uk/',
         'Source': 'https://github.com/uktrade/stream-unzip',
     },
     classifiers=[

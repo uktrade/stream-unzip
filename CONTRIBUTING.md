@@ -91,7 +91,7 @@ Changes are then submitted via a Pull Request (PR). To do this:
 
 7. Wait for the PR to be approved and merged, and respond to any questions or suggested changes.
 
-When the PR is merged, the documentation is deployed automatically to [https://stream-unzip.docs.data.trade.gov.uk/](https://stream-unzip.docs.data.trade.gov.uk/).
+When the PR is merged, the documentation is deployed automatically to [https://stream-unzip.docs.trade.gov.uk/](https://stream-unzip.docs.trade.gov.uk/).
 
 
 ## Contributing code
