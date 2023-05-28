@@ -471,6 +471,25 @@ class TestStreamUnzip(unittest.TestCase):
         self.assertEqual(sizes, [None])
         self.assertEqual(num_received_bytes, [4294967295])
 
+    def test_infozip_zip_limit_stored(self):
+        # This file is uncompressed, so it's double-zipped to just store a zipped
+        # one in the repo
+        def yield_input():
+            with open('fixtures/infozip_3_0_zip_limit_without_descriptors_stored.zip', 'rb') as f:
+                while True:
+                    chunk = f.read(65536)
+                    if not chunk:
+                        break
+                    yield chunk
+
+        size = 0
+        for name, _, chunks_outer in stream_unzip(yield_input()):
+            for name, _, chunks in stream_unzip(chunks_outer):
+                for chunk in chunks:
+                    size += len(chunk)
+
+        self.assertEqual(size, 4294967295)
+
     def test_infozip_zip64_with_descriptors(self):
         def yield_input():
             with open('fixtures/infozip_3_0_zip64_with_descriptors.zip', 'rb') as f:

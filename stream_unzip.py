@@ -192,16 +192,17 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
                 yield (extra_signature, extra_data)
 
         def get_extra_value(extra, if_true, signature, exception_if_missing, min_length, exception_if_too_short):
+            value = None
+
             if if_true:
                 try:
                     value = extra[signature]
                 except KeyError:
-                    raise exception_if_missing()
-
-                if len(value) < min_length:
-                    raise exception_if_too_short()
-            else:
-                value = None
+                    if exception_if_missing:
+                        raise exception_if_missing()
+                else:
+                    if len(value) < min_length:
+                        raise exception_if_too_short()
 
             return value
 
@@ -405,8 +406,9 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
             raise UnsupportedCompressionTypeError(compression)
 
         has_data_descriptor = flag_bits[3]
-        is_sure_zip64 = compressed_size_raw == zip64_compressed_size and uncompressed_size_raw == zip64_compressed_size
-        zip64_extra = get_extra_value(extra, not has_data_descriptor and is_sure_zip64, zip64_size_signature, MissingZip64ExtraError, 16, TruncatedZip64ExtraError)
+        might_be_zip64 = compressed_size_raw == zip64_compressed_size and uncompressed_size_raw == zip64_compressed_size 
+        zip64_extra = get_extra_value(extra, might_be_zip64, zip64_size_signature, False, 16, TruncatedZip64ExtraError)
+        is_sure_zip64 = bool(zip64_extra)
 
         compressed_size = \
             None if has_data_descriptor and compression in (8, 9, 12) else \
@@ -496,9 +498,6 @@ class UnexpectedSignatureError(DataError):
     pass
 
 class MissingExtraError(DataError):
-    pass
-
-class MissingZip64ExtraError(MissingExtraError):
     pass
 
 class MissingAESExtraError(MissingExtraError):
