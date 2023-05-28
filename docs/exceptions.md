@@ -99,8 +99,6 @@ Exceptions raised by the source iterable are passed through `stream_unzip` uncha
 
                 Metadata known as *extra* that some ZIP files require is missing.
 
-                - **MissingZip64ExtraError**
-
                 - **MissingAESExtraError**
 
             - **TruncatedExtraError**
