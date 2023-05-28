@@ -57,6 +57,10 @@ Exceptions raised by the source iterable are passed through `stream_unzip` uncha
 
                 - **UnsupportedCompressionTypeError**
 
+                - **UnsupportedZip64Error**
+
+                   A Zip64 member file has been encounted but support has been disabled.
+
             - **UncompressError**
 
               - **BZ2Error**
