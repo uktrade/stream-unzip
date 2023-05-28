@@ -11,7 +11,7 @@ from Crypto.Protocol.KDF import PBKDF2
 from stream_inflate import stream_inflate64
 
 
-def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
+def stream_unzip(zipfile_chunks, password=None, chunk_size=65536, allow_zip64=True):
     local_file_header_signature = b'PK\x03\x04'
     local_file_header_struct = Struct('<H2sHHHIIIHH')
     zip64_compressed_size = 0xFFFFFFFF
@@ -331,10 +331,10 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
             best_matches = (False, False, False, False, False)
             must_treat_as_zip64 = is_sure_zip64 or compressed_size_data > 0xFFFFFFFF or uncompressed_size_data > 0xFFFFFFFF
 
-            checks = (
+            checks = ((
                 (dd_struct_64_with_sig, dd_optional_signature),
                 (dd_struct_64, b''),
-            ) + ((
+            ) if allow_zip64 else ()) + ((
                 (dd_struct_32_with_sig, dd_optional_signature),
                 (dd_struct_32, b''),
             ) if not must_treat_as_zip64 else ())
@@ -409,6 +409,9 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
         might_be_zip64 = compressed_size_raw == zip64_compressed_size and uncompressed_size_raw == zip64_compressed_size 
         zip64_extra = get_extra_value(extra, might_be_zip64, zip64_size_signature, False, 16, TruncatedZip64ExtraError)
         is_sure_zip64 = bool(zip64_extra)
+
+        if not allow_zip64 and is_sure_zip64:
+            raise UnsupportedZip64Error()
 
         compressed_size = \
             None if has_data_descriptor and compression in (8, 9, 12) else \
@@ -489,6 +492,9 @@ class UnsupportedFlagsError(UnsupportedFeatureError):
     pass
 
 class UnsupportedCompressionTypeError(UnsupportedFeatureError):
+    pass
+
+class UnsupportedZip64Error(UnsupportedFeatureError):
     pass
 
 class TruncatedDataError(DataError):

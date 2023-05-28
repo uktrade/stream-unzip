@@ -11,6 +11,7 @@ from stream_unzip import (
     TruncatedDataError,
     UnsupportedFlagsError,
     UnsupportedCompressionTypeError,
+    UnsupportedZip64Error,
     UnexpectedSignatureError,
     HMACIntegrityError,
     CRC32IntegrityError,
@@ -398,6 +399,18 @@ class TestStreamUnzip(unittest.TestCase):
 
         self.assertEqual(size, 5000000000)
         self.assertEqual(num_received_bytes, 5000000000)
+
+    def test_python_zip64_disabled(self):
+        def yield_input():
+            with open('fixtures/python38_zip64.zip', 'rb') as f:
+                while True:
+                    chunk = f.read(65536)
+                    if not chunk:
+                        break
+                    yield chunk
+
+        with self.assertRaises(UnsupportedZip64Error):
+            next(iter(stream_unzip(yield_input(), allow_zip64=False)))
 
     def test_macos_single_file(self):
         def yield_input():
