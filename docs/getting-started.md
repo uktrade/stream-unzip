@@ -5,7 +5,7 @@ Python 3.5+
 
 ## Installation
 
-You can install stream-unzip and its dependencies from [PyPI](https://pypi.org/project/stream-zip/) using pip.
+You can install stream-unzip and its dependencies from [PyPI](https://pypi.org/project/stream-unzip/) using pip.
 
 ```bash
 pip install stream-unzip
