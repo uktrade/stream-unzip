@@ -50,8 +50,7 @@ jobs:
           path: ./reporter
       - name: "Install python dependencies"
         run: |
-          pip install .
-          pip install coverage==5.5
+          pip install ".[ci]"
           chmod +x ./reporter/cc-test-reporter
       - name: "Notify code climate of pending coverage upload"
         env:

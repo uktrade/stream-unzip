@@ -1,0 +1,45 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "stream-unzip"
+version = "0.0.0.dev0"
+authors = [
+  { name="Department for International Trade", email="sre@digital.trade.gov.uk" },
+]
+description = "Python function to stream unzip all the files in a ZIP archive, without loading the entire ZIP file into memory or any of its uncompressed files"
+readme = "README.md"
+requires-python = ">=3.6.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Topic :: System :: Archiving :: Compression",
+]
+dependencies = [
+    "pycryptodome>=3.10.1",
+    "stream-inflate>=0.0.12",
+]
+
+[project.optional-dependencies]
+dev = [
+    "coverage>=6.2",
+    "pytest>=6.2.5",
+    "pytest-cov>=3.0.0",
+]
+ci = [
+    "pycryptodome==3.10.1",
+    "stream-inflate==0.0.12",
+    "coverage==6.2",
+    "pytest==6.2.5",
+    "pytest-cov==3.0.0",
+]
+
+[project.urls]
+"Documentation" = "https://stream-unzip.docs.trade.gov.uk/"
+"Source" = "https://github.com/uktrade/stream-unzip"
+
+[tool.hatch.build]
+include = [
+  "stream_unzip.py",
+]
