@@ -15,7 +15,7 @@ An issue that contains a [minimal, reproducible example](https://stackoverflow.c
 A feature request can be submitted using the [Ideas category in the stream-unzip discussions](https://github.com/uktrade/stream-unzip/discussions/categories/ideas).
 
 
-## Cocumentation or code
+## Documentation or code
 
 To contribute changes to documentation or code, you will need the source of stream-unzip locally. The instructions for this depend on if you are a member of the [uktrade GitHub organisation](https://github.com/uktrade). In both cases, experience of working with source code, working on the command line, and working with git is helpful.
 
@@ -55,7 +55,7 @@ You should not fork the repository if you're a member of uktrade.
     cd stream-zup
     ```
 
-## Cocumentation
+## Documentation
 
 The source of the documentation is in the [docs/](https://github.com/uktrade/stream-unzip/tree/main/docs) directory of the source code, and is written using [Material for mkdocs](https://squidfunk.github.io/mkdocs-material/).
 
