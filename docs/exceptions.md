@@ -59,7 +59,7 @@ Exceptions raised by the source iterable are passed through `stream_unzip` uncha
 
                 - **UnsupportedZip64Error**
 
-                   A Zip64 member file has been encounted but support has been disabled.
+                    A Zip64 member file has been encounted but support has been disabled.
 
             - **UncompressError**
 
