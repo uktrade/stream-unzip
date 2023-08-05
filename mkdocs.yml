@@ -27,3 +27,4 @@ nav:
       - Exceptions: 'exceptions.md'
     - Contributing:
       - How to contribute: 'contributing.md'
+      - How to publish a release: 'publish-a-release.md'
