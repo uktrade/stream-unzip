@@ -1,3 +1,10 @@
+---
+layout: sub-navigation
+order: 1
+title: Get started
+---
+
+
 ## Prerequisites
 
 Python 3.6.7+
@@ -7,7 +14,7 @@ Python 3.6.7+
 
 You can install stream-unzip and its dependencies from [PyPI](https://pypi.org/project/stream-unzip/) using pip.
 
-```bash
+```shell
 pip install stream-unzip
 ```
 

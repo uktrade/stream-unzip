@@ -1,4 +1,9 @@
-# How to publish a release
+---
+layout: sub-navigation
+order: 5
+title: How to publish a release
+---
+
 
 Only mambers of the uktrade GitHub organisation may publish a release. If you are a member of the uktrade GitHub organsation:
 

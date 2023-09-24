@@ -1,4 +1,9 @@
-# Exceptions
+---
+layout: sub-navigation
+order: 3
+title: Exceptions
+---
+
 
 Exceptions raised by the source iterable are passed through `stream_unzip` unchanged. Other exceptions are in the `stream_unzip` module, and derive from its `UnzipError`.
 
