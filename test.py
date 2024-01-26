@@ -379,6 +379,16 @@ class TestStreamUnzip(unittest.TestCase):
 
         self.assertEqual(files, [(b'first.txt', 0, b'')])
 
+    def test_empty_zip(self):
+        def yield_input():
+            file = io.BytesIO()
+            with zipfile.ZipFile(file, 'w', zipfile.ZIP_DEFLATED) as zf:
+                pass
+
+            yield file.getvalue()
+
+        self.assertEqual(list(stream_unzip(yield_input())), [])
+
     def test_not_zip(self):
         with self.assertRaises(UnexpectedSignatureError):
             next(stream_unzip([b'This is not a zip file']))
