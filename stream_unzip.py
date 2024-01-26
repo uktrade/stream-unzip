@@ -18,6 +18,7 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536, allow_zip64=Tr
     zip64_size_signature = b'\x01\x00'
     aes_extra_signature = b'\x01\x99'
     central_directory_signature = b'PK\x01\x02'
+    end_of_central_directory_signature = b'PK\x05\x06'
     unsigned_short = Struct('<H')
     unsigned_long_long = Struct('<Q')
 
@@ -449,7 +450,7 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536, allow_zip64=Tr
             signature = get_num(len(local_file_header_signature))
             if signature == local_file_header_signature:
                 yield yield_file(yield_all, get_num, return_num_unused, return_bytes_unused, get_offset_from_start)
-            elif signature == central_directory_signature:
+            elif signature in (central_directory_signature, end_of_central_directory_signature):
                 for _ in yield_all():
                     pass
                 break
