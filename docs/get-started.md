@@ -25,6 +25,8 @@ If you regularly install stream-unzip, such as during application deployment, to
 
 ## Usage
 
+### Syncronous
+
 A single function is exposed, `stream_unzip`, that takes a single argument: an iterable that should yield the bytes of a ZIP file [with no zero-length chunks]. It returns an iterable, where each yielded item is a tuple of the file name, file size [`None` if this is not known], and another iterable itself yielding the unzipped bytes of that file.
 
 ```python
@@ -43,3 +45,19 @@ for file_name, file_size, unzipped_chunks in stream_unzip(zipped_chunks(), passw
 ```
 
 The file name and file size are extracted as reported from the file. If you don't trust the creator of the ZIP file, these should be treated as untrusted input.
+
+### Asyncronous
+
+Similarly to the synchronous mode, `async_stream_unzip` is exposed that takes and asyncronous generator, yields the exact same results as the syncronous.
+
+```python
+from stream_unzip import async_stream_unzip
+import httpx
+
+client = httpx.AsyncClient()
+async with client.stream('GET', 'https://www.example.com/my.zip') as r:
+    for file_name, file_size, unzipped_chunks in async_stream_unzip(r.aiter_bytes(), password=b'my-password'):
+        async for chunk in unzipped_chunks:
+            print(chunk)
+
+```

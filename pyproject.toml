@@ -41,5 +41,6 @@ ci = [
 
 [tool.hatch.build]
 include = [
+  "async_stream_unzip.py",
   "stream_unzip.py",
 ]
