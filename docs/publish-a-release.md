@@ -1,6 +1,6 @@
 ---
 layout: sub-navigation
-order: 5
+order: 6
 title: How to publish a release
 ---
 

@@ -1,5 +1,6 @@
 from functools import partial
 from struct import Struct
+import asyncio
 import bz2
 import zlib
 
@@ -461,6 +462,50 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536, allow_zip64=Tr
         yield file_name, file_size, unzipped_chunks
         for _ in unzipped_chunks:
             raise UnfinishedIterationError()
+
+
+async def async_stream_unzip(chunks, *args, **kwargs):
+
+    async def to_async_iterable(sync_iterable):
+        # asyncio.to_thread is not available until Python 3.9, and StopIteration doesn't get
+        # propagated by run_in_executor, so we use a sentinel to detect the end of the iterable
+        done = object()
+        it = iter(sync_iterable)
+
+        # contextvars are not available until Python 3.7
+        try:
+            import contextvars
+        except ImportError:
+            get_args = lambda: (next, it, done)
+        else:
+            get_args = lambda: (contextvars.copy_context().run, next, it, done)
+
+        while True:
+            value = await loop.run_in_executor(None, *get_args())
+            if value is done:
+                break
+            yield value
+
+    def to_sync_iterable(async_iterable):
+        # The built-in aiter and anext functions are not available until Python 3.10
+        async_it = async_iterable.__aiter__()
+        while True:
+            try:
+                value = asyncio.run_coroutine_threadsafe(async_it.__anext__(), loop).result()
+            except StopAsyncIteration:
+                break
+            yield value
+
+    # get_running_loop is preferred, but isn't available until Python 3.7
+    try:
+        loop = asyncio.get_running_loop()
+    except:
+        loop = asyncio.get_event_loop()
+    unzipped_chunks = stream_unzip(to_sync_iterable(chunks), *args, **kwargs)
+
+    async for name, size, chunks in to_async_iterable(unzipped_chunks):
+        yield name, size, to_async_iterable(chunks)
+
 
 class UnzipError(Exception):
     pass
