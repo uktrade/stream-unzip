@@ -1,11 +1,14 @@
+import asyncio
 import itertools
 import io
+import platform
 import unittest
 import uuid
 import random
 import zipfile
 
 from stream_unzip import (
+    async_stream_unzip,
     stream_unzip,
     UnfinishedIterationError,
     TruncatedDataError,
@@ -746,3 +749,106 @@ class TestStreamUnzip(unittest.TestCase):
             for name, size, chunks in stream_unzip(yield_input()):
                 for chunk in chunks:
                     pass
+
+    def test_async_stream_unzip(self):
+        async def async_bytes():
+            file = io.BytesIO()
+            with zipfile.ZipFile(file, 'w', zipfile.ZIP_DEFLATED) as zf:
+                zf.writestr('first.txt', b'-' * 100000)
+                zf.writestr('second.txt', b'*' * 100000)
+            zip_bytes = file.getvalue()
+
+            yield zip_bytes
+
+        results = []
+
+        async def test():
+            async for name, size, chunks in async_stream_unzip(async_bytes()):
+                b = b''
+                async for chunk in chunks:
+                    b += chunk
+                results.append((name, size, b))
+
+        asyncio.get_event_loop().run_until_complete(test())
+        self.assertEqual(results, [
+            (b'first.txt', 100000, b'-' * 100000),
+            (b'second.txt', 100000, b'*' * 100000),
+        ])
+
+    def test_async_exception_from_bytes_propagates(self):
+        async def async_bytes():
+            yield b'P'
+            raise Exception('From async bytes')
+
+        async def test():
+            await async_stream_unzip(async_bytes()).__aiter__().__anext__()
+
+        with self.assertRaisesRegex(Exception, 'From async bytes'):
+            asyncio.get_event_loop().run_until_complete(test())
+
+    def test_async_does_stream(self):
+        state = []
+
+        async def async_bytes():
+            file = io.BytesIO()
+            with zipfile.ZipFile(file, 'w', zipfile.ZIP_DEFLATED) as zf:
+                zf.writestr('first.txt', b'-' * 100000)
+                zf.writestr('second.txt', b'*' * 100000)
+            zip_bytes = file.getvalue()
+
+            chunk_size = 100
+            for i in range(0, len(zip_bytes), chunk_size):
+                state.append('in')
+                yield zip_bytes[i:i + chunk_size]
+                await asyncio.sleep(0)
+
+        async def test():
+            async for name, size, chunks in async_stream_unzip(async_bytes()):
+                async for chunk in chunks:
+                    state.append('out')
+
+        asyncio.get_event_loop().run_until_complete(test())
+        self.assertEqual(state, ['in', 'out', 'in', 'out', 'in', 'out', 'out', 'in', 'out', 'in'])
+
+    @unittest.skipIf(
+        tuple(int(v) for v in platform.python_version().split('.')) < (3,7,0),
+        "contextvars are not supported before Python 3.7.0",
+    )
+    def test_copy_of_context_variable_available_in_iterable(self):
+        # Ideally the context would be identical in the iterables, because that's what a purely asyncio
+        # implementation of stream-zip would likely do
+
+        import contextvars
+
+        var = contextvars.ContextVar('test')
+        var.set('set-from-outer')
+
+        d = contextvars.ContextVar('d')
+        d.set({'key': 'original-value'})
+
+        inner = None
+
+        async def async_bytes():
+            nonlocal inner
+            inner = var.get()
+
+            var.set('set-from-inner')
+            d.get()['key'] = 'set-from-inner'
+
+            file = io.BytesIO()
+            with zipfile.ZipFile(file, 'w', zipfile.ZIP_DEFLATED) as zf:
+                zf.writestr('first.txt', b'-' * 100000)
+                zf.writestr('second.txt', b'*' * 100000)
+            zip_bytes = file.getvalue()
+
+            yield zip_bytes
+
+        async def test():
+            async for name, size, chunks in async_stream_unzip(async_bytes()):
+                async for chunk in chunks:
+                    pass
+
+        asyncio.get_event_loop().run_until_complete(test())
+        self.assertEqual(var.get(), 'set-from-outer')
+        self.assertEqual(inner, 'set-from-outer')
+        self.assertEqual(d.get()['key'], 'set-from-inner')
