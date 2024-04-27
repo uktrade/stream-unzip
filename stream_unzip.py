@@ -9,7 +9,7 @@ from Crypto.Hash import HMAC, SHA1
 from Crypto.Util import Counter
 from Crypto.Protocol.KDF import PBKDF2
 
-from stream_inflate import stream_inflate64
+from stream_inflate import stream_inflate, stream_inflate64
 
 
 def stream_unzip(zipfile_chunks, password=None, chunk_size=65536, allow_zip64=True):
@@ -112,32 +112,40 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536, allow_zip64=Tr
 
         return _decompress, _is_done, _num_unused
 
-    def get_decompressor_deflate():
-        dobj = zlib.decompressobj(wbits=-zlib.MAX_WBITS)
+    # def get_decompressor_deflate():
+    #     dobj = zlib.decompressobj(wbits=-zlib.MAX_WBITS)
 
-        def _decompress_single(compressed_chunk):
-            try:
-                return dobj.decompress(compressed_chunk, chunk_size)
-            except zlib.error as e:
-                raise DeflateError() from e
+    #     def _decompress_single(compressed_chunk):
+    #         try:
+    #             return dobj.decompress(compressed_chunk, chunk_size)
+    #         except zlib.error as e:
+    #             raise DeflateError() from e
+
+    #     def _decompress(compressed_chunk):
+    #         uncompressed_chunk = _decompress_single(compressed_chunk)
+    #         if uncompressed_chunk:
+    #             yield uncompressed_chunk
+
+    #         while dobj.unconsumed_tail and not dobj.eof:
+    #             uncompressed_chunk = _decompress_single(dobj.unconsumed_tail)
+    #             if uncompressed_chunk:
+    #                 yield uncompressed_chunk
+
+    #     def _is_done():
+    #         return dobj.eof
+
+    #     def _num_unused():
+    #         return len(dobj.unused_data)
+
+    #     return _decompress, _is_done, _num_unused
+
+    def get_decompressor_deflate():
+        uncompressed_chunks, is_done, num_bytes_unconsumed = stream_inflate()
 
         def _decompress(compressed_chunk):
-            uncompressed_chunk = _decompress_single(compressed_chunk)
-            if uncompressed_chunk:
-                yield uncompressed_chunk
+            yield from uncompressed_chunks((compressed_chunk,))
 
-            while dobj.unconsumed_tail and not dobj.eof:
-                uncompressed_chunk = _decompress_single(dobj.unconsumed_tail)
-                if uncompressed_chunk:
-                    yield uncompressed_chunk
-
-        def _is_done():
-            return dobj.eof
-
-        def _num_unused():
-            return len(dobj.unused_data)
-
-        return _decompress, _is_done, _num_unused
+        return _decompress, is_done, num_bytes_unconsumed
 
     def get_decompressor_deflate64():
         uncompressed_chunks, is_done, num_bytes_unconsumed = stream_inflate64()

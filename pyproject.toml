@@ -29,7 +29,7 @@ dev = [
 ]
 ci = [
     "pycryptodome==3.10.1",
-    "stream-inflate==0.0.12",
+    "stream-inflate==0.0.15",
     "coverage==6.2",
     "pytest==6.2.5",
     "pytest-cov==3.0.0",
