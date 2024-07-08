@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 name = "stream-unzip"
 version = "0.0.0.dev0"
 authors = [
-  { name="Department for International Trade", email="sre@digital.trade.gov.uk" },
+  { name="Department for Business and Trade", email="sre@digital.trade.gov.uk" },
 ]
 description = "Python function to stream unzip all the files in a ZIP archive, without loading the entire ZIP file into memory or any of its uncompressed files"
 readme = "README.md"
