@@ -209,30 +209,39 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536, allow_zip64=Tr
             return value
 
         def decrypt_weak_decompress(chunks, decompress, is_done, num_unused):
+            # There are a few optimisations that make this code unusual:
+            # - There is code repetition (to avoid function calls inside loops)
+            # - We assign global variables to local (to avoid the dictionary lookups globals involve)
+            # - Use bytearray rather than bytes (to avoid allocating memory)
+            # - Avoids intermediate statements/variables (to minimise unnecessary operations)
+            # From some light tests these make it ~5%-10% faster than Python's zipfile (although it
+            # does use similar optimisations from what I can tell)
             key_0 = 305419896
             key_1 = 591751049
             key_2 = 878082192
             crc32 = zlib.crc32
-            bytes_c = bytes
-
-            def update_keys(byte):
-                nonlocal key_0, key_1, key_2
-                key_0 = ~crc32(bytes_c((byte,)), ~key_0) & 0xFFFFFFFF
-                key_1 = (key_1 + (key_0 & 0xFF)) & 0xFFFFFFFF
-                key_1 = ((key_1 * 134775813) + 1) & 0xFFFFFFFF
-                key_2 = ~crc32(bytes_c((key_1 >> 24,)), ~key_2) & 0xFFFFFFFF
+            bytearray_byte = bytearray(1)
 
             def decrypt(chunk):
+                nonlocal key_0, key_1, key_2
                 chunk = bytearray(chunk)
                 for i, byte in enumerate(chunk):
                     temp = key_2 | 2
                     byte ^= ((temp * (temp ^ 1)) >> 8) & 0xFF
-                    update_keys(byte)
+                    bytearray_byte[0] = byte
+                    key_0 = ~crc32(bytearray_byte, ~key_0) & 0xFFFFFFFF
+                    key_1 = ((((key_1 + (key_0 & 0xFF)) & 0xFFFFFFFF) * 134775813) + 1) & 0xFFFFFFFF
+                    bytearray_byte[0] = key_1 >> 24
+                    key_2 = ~crc32(bytearray_byte, ~key_2) & 0xFFFFFFFF
                     chunk[i] = byte
-                return bytes(chunk)
+                return chunk
 
             for byte in password:
-                update_keys(byte)
+                bytearray_byte[0] = byte
+                key_0 = ~crc32(bytearray_byte, ~key_0) & 0xFFFFFFFF
+                key_1 = ((((key_1 + (key_0 & 0xFF)) & 0xFFFFFFFF) * 134775813) + 1) & 0xFFFFFFFF
+                bytearray_byte[0] = key_1 >> 24
+                key_2 = ~crc32(bytearray_byte, ~key_2) & 0xFFFFFFFF
 
             encryption_header = decrypt(get_num(12))
             check_password_byte = \
