@@ -19,9 +19,9 @@ In addition to being memory efficient, stream-unzip supports:
 
 - Zip64 ZIP files. These are ZIP files that allow sizes far beyond the approximate 4GiB limit of the original ZIP format.
 
-- WinZip-style AES-encrypted ZIPs. Python's zipfile module cannot open AES-encrypted ZIPs.
+- WinZip-style AES-encrypted / password-protected ZIPs. Python's zipfile module cannot open AES-encrypted ZIPs.
 
-- Legacy-encrypted ZIP files. This is also known as ZipCrypto/Zip 2.0.
+- Legacy-encrypted / password-protected ZIP files. This is also known as ZipCrypto/Zip 2.0.
 
 - ZIP files created by Java's ZipOutputStream that are larger than 4GiB. At the time of writing libarchive-based stream readers cannot read these without error.
 

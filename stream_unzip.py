@@ -12,7 +12,24 @@ from Crypto.Protocol.KDF import PBKDF2
 from stream_inflate import stream_inflate64
 
 
-def stream_unzip(zipfile_chunks, password=None, chunk_size=65536, allow_zip64=True):
+NO_ENCRYPTION = object()
+ZIP_CRYPTO = object()
+AE_1 = object()
+AE_2 = object()
+AES_128 = object()
+AES_192 = object()
+AES_256 = object()
+
+
+def stream_unzip(zipfile_chunks, password=None, chunk_size=65536, allow_zip64=True, allowed_encryption_mechanisms=(
+        NO_ENCRYPTION,
+        ZIP_CRYPTO,
+        AE_1,
+        AE_2,
+        AES_128,
+        AES_192,
+        AES_256,
+)):
     local_file_header_signature = b'PK\x03\x04'
     local_file_header_struct = Struct('<H2sHHHIIIHH')
     zip64_compressed_size = 0xFFFFFFFF
@@ -256,12 +273,7 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536, allow_zip64=Tr
 
             return_num_unused(num_unused())
 
-        def decrypt_aes_decompress(chunks, decompress, is_done, num_unused, key_length_raw):
-            try:
-                key_length, salt_length = {1: (16, 8), 2: (24, 12), 3: (32, 16)}[key_length_raw]
-            except KeyError:
-                raise InvalidAESKeyLengthError(key_length_raw)
-
+        def decrypt_aes_decompress(chunks, decompress, is_done, num_unused, key_length, salt_length):
             salt = get_num(salt_length)
             password_verification_length = 2
 
@@ -409,6 +421,32 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536, allow_zip64=Tr
         if is_aes_encrypted and password is None:
             raise MissingAESPasswordError()
 
+        if not is_weak_encrypted and not is_aes_encrypted and password is not None and NO_ENCRYPTION not in allowed_encryption_mechanisms:
+            raise FileIsNotEncrypted()
+
+        if is_weak_encrypted and ZIP_CRYPTO not in allowed_encryption_mechanisms:
+            raise ZipCryptoNotAllowed()
+
+        if is_aes_encrypted and not is_aes_2_encrypted and AE_1 not in allowed_encryption_mechanisms:
+            raise AE1NotAllowed()
+
+        if is_aes_encrypted and is_aes_2_encrypted and AE_2 not in allowed_encryption_mechanisms:
+            raise AE2NotAllowed()
+
+        if is_aes_encrypted:
+            aes_key_length_raw = aes_extra[4]
+            try:
+                aes_key_length, aes_salt_length, aes_mechanism, aes_mechanism_not_allowed_exception = {
+                    1: (16, 8, AES_128, AES128NotAllowed),
+                    2: (24, 12, AES_192, AES192NotAllowed),
+                    3: (32, 16, AES_256, AES256NotAllowed),
+                }[aes_key_length_raw]
+            except KeyError:
+                raise InvalidAESKeyLengthError(aes_key_length_raw)
+
+            if aes_mechanism not in allowed_encryption_mechanisms:
+                raise aes_mechanism_not_allowed_exception()
+
         compression = \
             unsigned_short.unpack(aes_extra[5:7])[0] if is_aes_encrypted else \
             compression_raw
@@ -442,7 +480,7 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536, allow_zip64=Tr
 
         decompressed_bytes = \
             decrypt_weak_decompress(yield_all(), *decompressor) if is_weak_encrypted else \
-            decrypt_aes_decompress(yield_all(), *decompressor, key_length_raw=aes_extra[4]) if is_aes_encrypted else \
+            decrypt_aes_decompress(yield_all(), *decompressor, aes_key_length, aes_salt_length) if is_aes_encrypted else \
             decrypt_none_decompress(yield_all(), *decompressor)
 
         counted_decompressed_bytes, get_compressed_size, get_crc_32_actual, get_uncompressed_size = read_data_and_count_and_crc32(decompressed_bytes)
@@ -616,4 +654,31 @@ class IncorrectZipCryptoPasswordError(IncorrectPasswordError):
     pass
 
 class IncorrectAESPasswordError(IncorrectPasswordError):
+    pass
+
+class EncryptionMechanismNotAllowed(PasswordError):
+    pass
+
+class FileIsNotEncrypted(EncryptionMechanismNotAllowed):
+    pass
+
+class ZipCryptoNotAllowed(EncryptionMechanismNotAllowed):
+    pass
+
+class AESNotAllowed(EncryptionMechanismNotAllowed):
+    pass
+
+class AE1NotAllowed(AESNotAllowed):
+    pass
+
+class AE2NotAllowed(AESNotAllowed):
+    pass
+
+class AES128NotAllowed(AESNotAllowed):
+    pass
+
+class AES192NotAllowed(AESNotAllowed):
+    pass
+
+class AES256NotAllowed(AESNotAllowed):
     pass

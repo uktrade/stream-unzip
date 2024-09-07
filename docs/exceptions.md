@@ -50,6 +50,39 @@ Exceptions raised by the source iterable are passed through `stream_unzip` uncha
 
                     An incorrect password was supplied for an AES encrypted file.
 
+            - **EncryptionMechanismNotAllowed**
+
+                Base class for errors where a member file is encountered with an encryption mechanism that is not allowed according to the `allowed_encryption_mechanisms` parameter. Not being encrypted at all is classed as an encryption mechanism.
+
+                - **FileIsNotEncrypted**
+
+                    The current member file in the ZIP is not encrypted, but NO_ENCRYPTION was not passed as in the `allowed_encryption_mechanisms` parameter to allow this.
+
+                - **ZipCryptoNotAllowed**
+
+                    The current member file is encrypted with the ZipCrypto mechanim, but ZIP_CRYPTO was not passed in the `allowed_encryption_mechanisms` to allow this.
+
+                - **AE1NotAllowed**
+
+                    The current member file is encrypted with AE-1, but AE_1 was not passed in the `allowed_encryption_mechanisms` to allow this.
+
+                - **AE2NotAllowed**
+
+                    The current member file is encrypted with AE-2, but AE_2 was not passed in the `allowed_encryption_mechanisms`
+
+                - **AES128NotAllowed**
+
+                    The current member file is encrypted with AES 128, but AES_128 was not passed in the `allowed_encryption_mechanisms` to allow this.
+
+                - **AES192NotAllowed**
+
+                    The current member file is encrypted with AES 192, but AES_192 was not passed in the `allowed_encryption_mechanisms` to allow this.
+
+                - **AES256NotAllowed**
+
+                    The current member file is encrypted with AES 256, but AES_256 was not passed in the `allowed_encryption_mechanisms` to allow this.
+
+
         - **DataError**
 
             An issue with the ZIP bytes themselves was encountered.
