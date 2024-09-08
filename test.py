@@ -8,6 +8,13 @@ import random
 import zipfile
 
 from stream_unzip import (
+    NO_ENCRYPTION,
+    ZIP_CRYPTO,
+    AE_1,
+    AE_2,
+    AES_128,
+    AES_192,
+    AES_256,
     async_stream_unzip,
     stream_unzip,
     UnfinishedIterationError,
@@ -22,6 +29,13 @@ from stream_unzip import (
     MissingAESPasswordError,
     IncorrectZipCryptoPasswordError,
     IncorrectAESPasswordError,
+    FileIsNotEncrypted,
+    ZipCryptoNotAllowed,
+    AE1NotAllowed,
+    AE2NotAllowed,
+    AES128NotAllowed,
+    AES192NotAllowed,
+    AES256NotAllowed,
     DeflateError,
 )
 
@@ -382,6 +396,17 @@ class TestStreamUnzip(unittest.TestCase):
 
         self.assertEqual(files, [(b'first.txt', 0, b'')])
 
+    def test_password_supplied_but_not_encrypted(self):
+        def yield_input():
+            file = io.BytesIO()
+            with zipfile.ZipFile(file, 'w', zipfile.ZIP_DEFLATED) as zf:
+                zf.writestr('first.txt', b'anything')
+
+            yield file.getvalue()
+
+        with self.assertRaises(FileIsNotEncrypted):
+            next(iter(stream_unzip(yield_input(), password=b'anything', allowed_encryption_mechanisms=())))
+
     def test_empty_zip(self):
         def yield_input():
             file = io.BytesIO()
@@ -566,6 +591,15 @@ class TestStreamUnzip(unittest.TestCase):
             for name, size, chunks in stream_unzip(yield_input()):
                 next(chunks)
 
+    def test_infozip_password_protected_zip_crypto_not_allowed(self):
+        def yield_input():
+            with open('fixtures/infozip_3_0_password.zip', 'rb') as f:
+                yield f.read()
+
+        with self.assertRaises(ZipCryptoNotAllowed):
+            for name, size, chunks in stream_unzip(yield_input(), password=b'any-password', allowed_encryption_mechanisms=()):
+                next(chunks)
+
     def test_infozip_password_protected_file_bad_password(self):
         def yield_input():
             with open('fixtures/infozip_3_0_password.zip', 'rb') as f:
@@ -611,6 +645,26 @@ class TestStreamUnzip(unittest.TestCase):
             self.assertEqual(files, [
                 (b'content.txt', 384, b'Some content to be compressed and AES-encrypted\n' * 8),
             ])
+
+    def test_7za_password_protected_ae_2_not_allowed(self):
+        def yield_input():
+            with open('fixtures/7za_17_4_aes.zip', 'rb') as f:
+                yield from iter(lambda: f.read(4), b'')
+
+        with self.assertRaises(AE2NotAllowed):
+            next(iter(stream_unzip(yield_input(), password=b'password', allowed_encryption_mechanisms=(
+                AES_256,
+            ))))
+
+    def test_7za_password_protected_aes_256_not_allowed(self):
+        def yield_input():
+            with open('fixtures/7za_17_4_aes.zip', 'rb') as f:
+                yield from iter(lambda: f.read(4), b'')
+
+        with self.assertRaises(AES256NotAllowed):
+            next(iter(stream_unzip(yield_input(), password=b'password', allowed_encryption_mechanisms=(
+                AE_2,
+            ))))
 
     def test_7za_password_protected_aes_bad_hmac(self):
         def yield_input():
