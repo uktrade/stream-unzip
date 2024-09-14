@@ -528,7 +528,10 @@ async def async_stream_unzip(chunks, *args, **kwargs):
             get_args = lambda: (contextvars.copy_context().run, next, it, done)
 
         while True:
-            value = await loop.run_in_executor(None, *get_args())
+            if trio is not None:
+                value = await trio.to_thread.run_sync(*get_args())
+            else:
+                value = await loop.run_in_executor(None, *get_args())
             if value is done:
                 break
             yield value
@@ -538,16 +541,31 @@ async def async_stream_unzip(chunks, *args, **kwargs):
         async_it = async_iterable.__aiter__()
         while True:
             try:
-                value = asyncio.run_coroutine_threadsafe(async_it.__anext__(), loop).result()
+                if trio is not None:
+                    value = trio.from_thread.run(async_it.__anext__)
+                else:
+                    value = asyncio.run_coroutine_threadsafe(async_it.__anext__(), loop).result()
             except StopAsyncIteration:
                 break
             yield value
 
-    # get_running_loop is preferred, but isn't available until Python 3.7
+    # A slightly complex dance to both find the asyncio event loop in various versions of Python,
+    # but also to work out if we're not in an asyncio event loop and instead in trio
+    # Note that get_running_loop is preferred, but isn't available until Python 3.7
+    trio = None
+    loop = None
     try:
         loop = asyncio.get_running_loop()
-    except:
+    except AttributeError:
         loop = asyncio.get_event_loop()
+        if not loop.is_running():
+            loop = None
+    except RuntimeError:
+        loop = None
+
+    if loop is None:
+        import trio
+
     unzipped_chunks = stream_unzip(to_sync_iterable(chunks), *args, **kwargs)
 
     async for name, size, chunks in to_async_iterable(unzipped_chunks):

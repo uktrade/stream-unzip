@@ -829,6 +829,38 @@ class TestStreamUnzip(unittest.TestCase):
             (b'second.txt', 100000, b'*' * 100000),
         ])
 
+    @unittest.skipIf(
+        tuple(int(v) for v in platform.python_version().split('.')) == (3,7,1),
+        "trio appears not compatible with Python 3.7.1",
+    )
+    def test_async_stream_unzip_with_trio(self):
+        import trio
+
+        async def async_bytes():
+            file = io.BytesIO()
+            with zipfile.ZipFile(file, 'w', zipfile.ZIP_DEFLATED) as zf:
+                zf.writestr('first.txt', b'-' * 100000)
+                zf.writestr('second.txt', b'*' * 100000)
+            zip_bytes = file.getvalue()
+
+            yield zip_bytes
+
+        results = []
+
+        async def test():
+            async for name, size, chunks in async_stream_unzip(async_bytes()):
+                b = b''
+                async for chunk in chunks:
+                    b += chunk
+                results.append((name, size, b))
+
+        trio.run(test)
+        self.assertEqual(results, [
+            (b'first.txt', 100000, b'-' * 100000),
+            (b'second.txt', 100000, b'*' * 100000),
+        ])
+
+
     def test_async_exception_from_bytes_propagates(self):
         async def async_bytes():
             yield b'P'
