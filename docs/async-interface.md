@@ -33,6 +33,8 @@ async def main():
 asyncio.run(main())
 ```
 
+The async interface is compatible with both [asyncio](https://docs.python.org/3/library/asyncio.html) and [trio](https://github.com/python-trio/trio).
+
 > ### Warnings
 >
 > Under the hood `async_stream_unzip` uses threads as a layer over the synchronous `stream_unzip` function. This has two consequences:

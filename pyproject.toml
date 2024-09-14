@@ -26,6 +26,7 @@ dev = [
     "coverage>=6.2",
     "pytest>=6.2.5",
     "pytest-cov>=3.0.0",
+    "trio>=0.19.0",
 ]
 ci = [
     "pycryptodome==3.10.1",
@@ -33,6 +34,7 @@ ci = [
     "coverage==6.2",
     "pytest==6.2.5",
     "pytest-cov==3.0.0",
+    "trio==0.19.0"
 ]
 
 [project.urls]
