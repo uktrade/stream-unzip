@@ -21,4 +21,4 @@ In addition to being memory efficient, stream-unzip supports:
 
 - BZip2-compressed ZIPs.
 
-- An async interface (that uses threads under the hood).
+- An async interface that supports both asyncio and trio (which uses threads under the hood).
