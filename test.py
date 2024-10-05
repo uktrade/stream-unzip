@@ -23,6 +23,7 @@ from stream_unzip import (
     UnsupportedCompressionTypeError,
     UnsupportedZip64Error,
     UnexpectedSignatureError,
+    NotStreamUnzippable,
     HMACIntegrityError,
     CRC32IntegrityError,
     MissingZipCryptoPasswordError,
@@ -625,6 +626,19 @@ class TestStreamUnzip(unittest.TestCase):
         self.assertEqual(files, [
             (b'-', None, b'Some encrypted content to be compressed. Yes, compressed.'),
         ])
+
+    def test_infozip_stored_zero_length_with_data_descriptor(self):
+        # In this test the member file is _actually_ zero length, but it's a proxy for cases
+        # when the local header says the uncompressed member file is zero length, but since it has
+        # a data descriptor we can't trust that, and so we have to raise an exception that it is
+        # not stream unzippable
+
+        def yield_input():
+            with open('fixtures/infozip_3_0_stored_zero_length_with_data_descriptor.zip', 'rb') as f:
+                yield f.read()
+
+        with self.assertRaises(NotStreamUnzippable):
+            next(stream_unzip(yield_input()))
 
     def test_7za_password_protected_aes(self):
         def yield_input(i):

@@ -99,6 +99,12 @@ Exceptions raised by the source iterable are passed through `stream_unzip` uncha
 
                     A Zip64 member file has been encounted but support has been disabled.
 
+                - **NotStreamUnzippable**
+
+                    A member file has been encounted that is not stream unzippable.
+
+                    The only way to address this is to change how the member file is created. It must either be created compressed, or without using a "data descriptor", or if the file has a non-zero length its length must be given in the "local header" of the member file.
+
             - **UncompressError**
 
                 - **BZ2Error**

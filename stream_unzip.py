@@ -472,6 +472,14 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536, allow_zip64=Tr
             unsigned_long_long.unpack(zip64_extra[:8])[0] if is_sure_zip64 else \
             uncompressed_size_raw
 
+        # We can't stream-unzip non-compressed member files unless we know their size in the local
+        # header, which isn't usually the case if we have a data descriptor. However, some ZIP
+        # archivers write the size in the local header even if a data descriptor is used, so if we
+        # have a non-zero value, we _should_ be able to use it, and so only need to fail if we have
+        # a zero size.
+        if has_data_descriptor and compression == 0 and compressed_size == 0:
+            raise NotStreamUnzippable(file_name)
+
         decompressor = \
             get_decompressor_none(uncompressed_size) if compression == 0 else \
             get_decompressor_deflate() if compression == 8 else \
@@ -606,6 +614,9 @@ class UnsupportedCompressionTypeError(UnsupportedFeatureError):
     pass
 
 class UnsupportedZip64Error(UnsupportedFeatureError):
+    pass
+
+class NotStreamUnzippable(UnsupportedFeatureError):
     pass
 
 class TruncatedDataError(DataError):
