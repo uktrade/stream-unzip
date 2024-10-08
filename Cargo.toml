@@ -1,0 +1,13 @@
+[package]
+name = "zipcrypto_decrypt"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "zipcrypto_decrypt"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = { version = "0.22.2", features = ["extension-module", "gil-refs"] }
+zip = "2.2.0"
+crc32fast = "1.4.2"  # For faster CRC32 computation
