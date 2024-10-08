@@ -7,7 +7,7 @@ title: Get started
 
 ## Prerequisites
 
-Python 3.7.0+
+Python 3.7.1+
 
 
 ## Installation
