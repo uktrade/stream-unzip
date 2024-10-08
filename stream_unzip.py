@@ -146,8 +146,6 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536, allow_zip64=Tr
 
         def _decompress_single(compressed_chunk):
             try:
-                if isinstance(compressed_chunk, list) and (compressed_chunk := bytes(compressed_chunk)):
-                    pass
                 return dobj.decompress(compressed_chunk, chunk_size)
             except zlib.error as e:
                 raise DeflateError() from e
@@ -338,8 +336,6 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536, allow_zip64=Tr
 
                 offset_1 = get_offset_from_start()
                 for chunk in chunks:
-                    if (chunk := bytes(chunk)) if isinstance(chunk, list) else chunk:
-                        pass
                     crc_32_actual = zlib.crc32(chunk, crc_32_actual)
                     l += len(chunk)
                     yield chunk

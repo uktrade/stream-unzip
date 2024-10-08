@@ -1,4 +1,5 @@
 use pyo3::prelude::*;
+use pyo3::types::PyBytes;
 use crc32fast::Hasher;
 
 // ZipCrypto key initialization vector and constants
@@ -75,8 +76,11 @@ impl StreamZipCryptoDecryptor {
     }
 
     // This function decrypts a single chunk and returns the decrypted result.
-    fn decrypt_chunk(&mut self, chunk: Vec<u8>) -> PyResult<Vec<u8>> {
-        Ok(self.zipcrypto.decrypt_chunk(&chunk))
+    fn decrypt_chunk<'py>(&mut self, py: Python<'py>, chunk: Vec<u8>) -> PyResult<&'py PyBytes> {
+        let result = self.zipcrypto.decrypt_chunk(&chunk);
+        // Return the decrypted result as a Python bytes object
+        // so that it can be used in Python code.
+        Ok(PyBytes::new(py, &result))
     }
 }
 

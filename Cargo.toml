@@ -8,6 +8,6 @@ name = "zipcrypto_decrypt"
 crate-type = ["cdylib"]
 
 [dependencies]
-pyo3 = { version = "0.22.2", features = ["extension-module"] }
+pyo3 = { version = "0.22.2", features = ["extension-module", "gil-refs"] }
 zip = "2.2.0"
 crc32fast = "1.4.2"  # For faster CRC32 computation
