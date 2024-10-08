@@ -1,6 +1,6 @@
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["maturin>=1.5,<2.0"]
+build-backend = "maturin"
 
 [project]
 name = "stream-unzip"
@@ -44,4 +44,5 @@ ci = [
 [tool.hatch.build]
 include = [
   "stream_unzip.py",
+  "src/**"
 ]
