@@ -1,6 +1,6 @@
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["maturin>=0.12,<0.13"]
+build-backend = "maturin"
 
 [project]
 name = "stream-unzip"
@@ -37,7 +37,8 @@ ci = [
 "Documentation" = "https://stream-unzip.docs.trade.gov.uk/"
 "Source" = "https://github.com/uktrade/stream-unzip"
 
-[tool.hatch.build]
+[tool.maturin]
 include = [
   "stream_unzip.py",
+  "src/**"
 ]

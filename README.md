@@ -21,7 +21,7 @@ In addition to being memory efficient, stream-unzip supports:
 
 - WinZip-style AES-encrypted / password-protected ZIPs. Python's zipfile module cannot open AES-encrypted ZIPs.
 
-- Legacy-encrypted / password-protected ZIP files. This is also known as ZipCrypto/Zip 2.0.
+- Legacy-encrypted / password-protected ZIP files. This is also known as ZipCrypto/Zip 2.0. Decrypting ZipCrypto with stream-unzip is approximately 10 times faster than Python's zipfile module.
 
 - ZIP files created by Java's ZipOutputStream that are larger than 4GiB. At the time of writing libarchive-based stream readers cannot read these without error.
 
