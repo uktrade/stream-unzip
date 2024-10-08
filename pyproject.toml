@@ -41,7 +41,7 @@ ci = [
 "Documentation" = "https://stream-unzip.docs.trade.gov.uk/"
 "Source" = "https://github.com/uktrade/stream-unzip"
 
-[tool.hatch.build]
+[tool.maturin]
 include = [
   "stream_unzip.py",
   "src/**"
