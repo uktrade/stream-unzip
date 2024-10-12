@@ -1,6 +1,6 @@
 ---
 layout: sub-navigation
-order: 4
+order: 6
 title: How to contribute
 ---
 
