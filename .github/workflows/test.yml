@@ -26,6 +26,12 @@ jobs:
             os: "ubuntu-20.04"
           - python-version: "3.10.0"
             os: "ubuntu-20.04"
+          - python-version: "3.11.0"
+            os: "ubuntu-20.04"
+          - python-version: "3.12.0"
+            os: "ubuntu-20.04"
+          - python-version: "3.13.0"
+            os: "ubuntu-20.04"
     runs-on: ${{ matrix.os }}
     steps:
       - name: "Checkout"
@@ -35,7 +41,7 @@ jobs:
           python-version: '${{ matrix.python-version }}'
       - name: "Install python dependencies"
         run: |
-          pip install ".[ci]"
+          pip install ".[dev,ci]"
       - name: "Run tests"
         run: |
           coverage run -m unittest -v
