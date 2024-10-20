@@ -1,4 +1,3 @@
-from functools import partial
 from struct import Struct
 import asyncio
 import bz2
