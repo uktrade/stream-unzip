@@ -14,8 +14,6 @@ jobs:
         # If changing how many times tests are run, must also change in codecov.yml
         # to ensure test coverage is reported only after all tests have finished
         include:
-          - python-version: "3.6.7"
-            os: "ubuntu-20.04"
           - python-version: "3.7.1"
             os: "ubuntu-20.04"
           - python-version: "3.7.2"

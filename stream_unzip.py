@@ -1,5 +1,6 @@
 from struct import Struct
 import asyncio
+import contextvars
 import bz2
 import zlib
 
@@ -525,14 +526,7 @@ async def async_stream_unzip(chunks, *args, **kwargs):
         # propagated by run_in_executor, so we use a sentinel to detect the end of the iterable
         done = object()
         it = iter(sync_iterable)
-
-        # contextvars are not available until Python 3.7
-        try:
-            import contextvars
-        except ImportError:
-            get_args = lambda: (next, it, done)
-        else:
-            get_args = lambda: (contextvars.copy_context().run, next, it, done)
+        get_args = lambda: (contextvars.copy_context().run, next, it, done)
 
         while True:
             if trio is not None:
@@ -556,17 +550,12 @@ async def async_stream_unzip(chunks, *args, **kwargs):
                 break
             yield value
 
-    # A slightly complex dance to both find the asyncio event loop in various versions of Python,
-    # but also to work out if we're not in an asyncio event loop and instead in trio
-    # Note that get_running_loop is preferred, but isn't available until Python 3.7
+    # A slightly complex dance to both find the asyncio event loop and to work out if we're not in
+    # asyncio event loop and instead in trio
     trio = None
     loop = None
     try:
         loop = asyncio.get_running_loop()
-    except AttributeError:
-        loop = asyncio.get_event_loop()
-        if not loop.is_running():
-            loop = None
     except RuntimeError:
         loop = None
 
