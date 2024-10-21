@@ -44,5 +44,3 @@ The async interface is compatible with both [asyncio](https://docs.python.org/3/
 > 2. The [contextvars](https://docs.python.org/3/library/contextvars.html) context available in the async iterables of files or data is a shallow copy of the context where async_stream_unzip is called from.
 >
 >   This means that existing context variables are available inside the input iterable, but any changes made to the context itself from inside the iterable will not propagate out to the original context. Changes made to mutable data structures that are part of the context, for example dictionaries, will propagate out.
->
->   This does not affect Python 3.6, because contextvars is not available.

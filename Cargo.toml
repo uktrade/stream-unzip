@@ -1,0 +1,12 @@
+[package]
+name = "stream_unzip_zipcrypto_decrypt"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "stream_unzip_zipcrypto_decrypt"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = { version = "0.22.5", features = ["extension-module", "gil-refs"] }
+crc32-v2 = "0.0.4"
