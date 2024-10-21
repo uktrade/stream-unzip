@@ -13,7 +13,7 @@ jobs:
 
       - name: Update version in pyproject.toml from current git tag
         run: |
-          sed -i "s/0\\.0\\.0\\.dev0/${GITHUB_REF_NAME}/g" pyproject.toml
+          sed -i "s/0\\.0\\.0\\.dev0/${GITHUB_REF_NAME/v/}/g" pyproject.toml
 
       - uses: actions/setup-python@v4
         with:
@@ -53,7 +53,7 @@ jobs:
 
       - name: Update version in pyproject.toml from current git tag
         run: |
-          sed -i "s/0\\.0\\.0\\.dev0/${GITHUB_REF_NAME}/g" pyproject.toml
+          sed -i "s/0\\.0\\.0\\.dev0/${GITHUB_REF_NAME/v/}/g" pyproject.toml
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -106,7 +106,7 @@ jobs:
 
       - name: Update version in pyproject.toml from current git tag
         run: |
-          sed -i "" "s/0\\.0\\.0\\.dev0/${GITHUB_REF_NAME}/g" pyproject.toml
+          sed -i "" "s/0\\.0\\.0\\.dev0/${GITHUB_REF_NAME/v/}/g" pyproject.toml
 
       - name: Build package
         run: |
@@ -142,7 +142,7 @@ jobs:
 
       - name: Update version in pyproject.toml from current git tag
         run: |
-          (Get-Content pyproject.toml).Replace('0.0.0.dev0', $Env:GITHUB_REF_NAME) | Set-Content pyproject.toml
+          (Get-Content pyproject.toml).Replace('0.0.0.dev0', ($Env:GITHUB_REF_NAME).Replace('v', '')) | Set-Content pyproject.toml
 
       - name: Build package
         run: |
