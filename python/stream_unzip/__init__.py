@@ -11,7 +11,7 @@ from Crypto.Protocol.KDF import PBKDF2
 
 from stream_inflate import stream_inflate64
 
-from stream_unzip_zipcrypto_decrypt import zipcrypto_decryptor
+from ._zipcrypto import zipcrypto_decryptor
 
 
 NO_ENCRYPTION = object()
