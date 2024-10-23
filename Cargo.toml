@@ -1,10 +1,10 @@
 [package]
-name = "stream_unzip_zipcrypto_decrypt"
+name = "_zipcrypto"
 version = "0.1.0"
 edition = "2021"
 
 [lib]
-name = "stream_unzip_zipcrypto_decrypt"
+name = "_zipcrypto"
 crate-type = ["cdylib"]
 
 [dependencies]

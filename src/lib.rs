@@ -82,7 +82,8 @@ impl StreamUnzipZipCryptoDecryptor {
 }
 
 #[pymodule]
-fn stream_unzip_zipcrypto_decrypt(m: &Bound<'_, PyModule>) -> PyResult<()> {
+#[pyo3(name="_zipcrypto")]
+fn zipcrypto(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<StreamUnzipZipCryptoDecryptor>()?;
     Ok(())
 }
