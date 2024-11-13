@@ -39,6 +39,7 @@ jobs:
           - "musllinux_1_1_x86_64"
           - "manylinux2014_aarch64"
           - "musllinux_1_1_aarch64"
+          - "musllinux_1_2_armv7l"
         folder:
           - "cp37-cp37m"
           - "cp38-cp38"
@@ -58,7 +59,7 @@ jobs:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
         with:
-          platforms: arm64
+          platforms: arm64,arm
 
       - name: Build packages
         run: >-
