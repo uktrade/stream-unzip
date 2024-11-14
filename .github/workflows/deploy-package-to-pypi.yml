@@ -111,7 +111,7 @@ jobs:
         run: >-
           docker run --rm -v ${{ github.workspace }}:/app quay.io/pypa/${{ matrix.image }} bash -c '
             cd /app &&
-            apk add rust &&
+            apk add rust cargo &&
             /opt/python/${{ matrix.folder }}/bin/python -m build --wheel &&
             auditwheel repair $(ls dist/*.whl) &&
             rm dist/*.whl &&
