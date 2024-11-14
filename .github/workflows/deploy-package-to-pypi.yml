@@ -29,8 +29,8 @@ jobs:
           name: source
           path: ./dist
 
-  build-linux:
-    name: Build Linux wheels
+  build-linux-non-arm7l:
+    name: Build Linux wheels (all but arm7l)
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -39,6 +39,52 @@ jobs:
           - "musllinux_1_1_x86_64"
           - "manylinux2014_aarch64"
           - "musllinux_1_1_aarch64"
+        folder:
+          - "cp37-cp37m"
+          - "cp38-cp38"
+          - "cp39-cp39"
+          - "cp310-cp310"
+          - "cp311-cp311"
+          - "cp312-cp312"
+          - "cp313-cp313"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Update version in pyproject.toml from current git tag
+        run: |
+          sed -i "s/0\\.0\\.0\\.dev0/${GITHUB_REF_NAME/v/}/g" pyproject.toml
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      - name: Build packages
+        run: >-
+          docker run --rm -v ${{ github.workspace }}:/app quay.io/pypa/${{ matrix.image }} bash -c '
+            cd /app &&
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y &&
+            . "$HOME/.cargo/env" &&
+            /opt/python/${{ matrix.folder }}/bin/python -m build --wheel
+            auditwheel repair $(ls dist/*.whl) &&
+            rm dist/*.whl &&
+            cp wheelhouse/*.whl dist
+          '
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-${{ matrix.image }}-$${{ matrix.folder }}
+          path: ./dist
+
+  build-linux-arm7l:
+    # Installing rust via rustup isn't supported on arm7l: it's a "Tier 2 target without host tools"
+    # But we can install it using the distribution's system package manager, in this case apk
+    name: Build Linux wheels (arm7l)
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        image:
           - "musllinux_1_2_armv7l"
         folder:
           - "cp37-cp37m"
@@ -59,15 +105,14 @@ jobs:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
         with:
-          platforms: arm64,arm
+          platforms: arm
 
       - name: Build packages
         run: >-
           docker run --rm -v ${{ github.workspace }}:/app quay.io/pypa/${{ matrix.image }} bash -c '
             cd /app &&
-            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y &&
-            . "$HOME/.cargo/env" &&
-            /opt/python/${{ matrix.folder }}/bin/python -m build --wheel
+            apk add rust &&
+            /opt/python/${{ matrix.folder }}/bin/python -m build --wheel &&
             auditwheel repair $(ls dist/*.whl) &&
             rm dist/*.whl &&
             cp wheelhouse/*.whl dist
@@ -158,7 +203,8 @@ jobs:
   deploy:
     needs:
       - build-source
-      - build-linux
+      - build-linux-non-arm7l
+      - build-linux-arm7l
       - build-macos
       - build-windows
     environment:
