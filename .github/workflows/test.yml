@@ -40,6 +40,9 @@ jobs:
       - name: "Install python dependencies"
         run: |
           pip install ".[dev,ci]"
+      - name: "Run type checking"
+        run: |
+          mypy python test.py --disable-error-code import
       - name: "Run tests"
         run: |
           coverage run -m unittest -v

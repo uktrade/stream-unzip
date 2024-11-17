@@ -539,7 +539,7 @@ async def async_stream_unzip(
         loop = None
 
     if loop is None:
-        import trio
+        import trio  # type: ignore [no-redef, assignment]
 
     unzipped_chunks = stream_unzip(
         zipfile_chunks=to_sync_iterable(chunks),
