@@ -1,4 +1,5 @@
 from struct import Struct
+from typing import Any, AsyncGenerator, AsyncIterable, Container, Generator, Iterable, NewType, Optional, Tuple
 import asyncio
 import contextvars
 import bz2
@@ -14,24 +15,27 @@ from stream_inflate import stream_inflate64
 from ._zipcrypto import zipcrypto_decryptor
 
 
-NO_ENCRYPTION = object()
-ZIP_CRYPTO = object()
-AE_1 = object()
-AE_2 = object()
-AES_128 = object()
-AES_192 = object()
-AES_256 = object()
+# Type is private to prevent users from inventing new values
+_Encryption = NewType('_Encryption', object)
 
+NO_ENCRYPTION: _Encryption = _Encryption(object())
+ZIP_CRYPTO: _Encryption = _Encryption(object())
+AE_1: _Encryption = _Encryption(object())
+AE_2: _Encryption = _Encryption(object())
+AES_128: _Encryption = _Encryption(object())
+AES_192: _Encryption = _Encryption(object())
+AES_256: _Encryption = _Encryption(object())
 
-def stream_unzip(zipfile_chunks, password=None, chunk_size=65536, allow_zip64=True, allowed_encryption_mechanisms=(
-        NO_ENCRYPTION,
-        ZIP_CRYPTO,
-        AE_1,
-        AE_2,
-        AES_128,
-        AES_192,
-        AES_256,
-)):
+_ALL_ENCRYPTIONS = (NO_ENCRYPTION, ZIP_CRYPTO, AE_1, AE_2, AES_128, AES_192, AES_256)
+_DEFAULT_CHUNK_SIZE = 65536
+
+def stream_unzip(
+    zipfile_chunks: Iterable[bytes],
+    password: Optional[bytes]=None,
+    chunk_size: int=_DEFAULT_CHUNK_SIZE,
+    allow_zip64: bool=True,
+    allowed_encryption_mechanisms: Container[_Encryption]=_ALL_ENCRYPTIONS,
+) -> Generator[Tuple[bytes, int, Generator[bytes, Any, None]], Any, None]:
     local_file_header_signature = b'PK\x03\x04'
     local_file_header_struct = Struct('<H2sHHHIIIHH')
     zip64_compressed_size = 0xFFFFFFFF
@@ -489,8 +493,13 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536, allow_zip64=Tr
             raise UnfinishedIterationError()
 
 
-async def async_stream_unzip(chunks, *args, **kwargs):
-
+async def async_stream_unzip(
+    chunks: AsyncIterable[bytes],
+    password: Optional[bytes]=None,
+    chunk_size: int=_DEFAULT_CHUNK_SIZE,
+    allow_zip64: bool=True,
+    allowed_encryption_mechanisms: Container[_Encryption]=_ALL_ENCRYPTIONS,
+) -> AsyncGenerator[Tuple[bytes, int, AsyncGenerator[bytes, None]], None]:
     async def to_async_iterable(sync_iterable):
         # asyncio.to_thread is not available until Python 3.9, and StopIteration doesn't get
         # propagated by run_in_executor, so we use a sentinel to detect the end of the iterable
@@ -532,7 +541,13 @@ async def async_stream_unzip(chunks, *args, **kwargs):
     if loop is None:
         import trio
 
-    unzipped_chunks = stream_unzip(to_sync_iterable(chunks), *args, **kwargs)
+    unzipped_chunks = stream_unzip(
+        zipfile_chunks=to_sync_iterable(chunks),
+        password=password,
+        chunk_size=chunk_size,
+        allow_zip64=allow_zip64,
+        allowed_encryption_mechanisms=allowed_encryption_mechanisms,
+    )
 
     async for name, size, chunks in to_async_iterable(unzipped_chunks):
         yield name, size, to_async_iterable(chunks)
