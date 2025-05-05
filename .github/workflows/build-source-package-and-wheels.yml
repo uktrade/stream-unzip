@@ -185,6 +185,40 @@ jobs:
           name: ${{ matrix.os }}-${{ matrix.python-version }}
           path: ./dist
 
+  build-ios:
+    name: Build iOS wheels
+    runs-on: 'macos-14'
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+
+      - name: Update version in pyproject.toml and setup.py from current git tag
+        run: |
+          GITHUB_REF_NAME=${{ inputs.github-ref-name }}
+          sed -i "" "s/0\\.0\\.0\\.dev0/${GITHUB_REF_NAME/v/}/g" pyproject.toml
+
+      - name: Install cibuildwheel
+        # iOS support not yet released to PyPI
+        run: python -m pip install git+https://github.com/pypa/cibuildwheel.git@e91560e8a14470ff35488e414aa7aa1de5aec2d8
+
+      - name: Build wheels
+        run: |
+          python -m cibuildwheel --output-dir dist
+        env:
+          CIBW_PLATFORM: 'ios'
+          CIBW_ARCHS: 'all'
+          CIBW_BUILD: 'cp*'
+          CIBW_XBUILD_TOOLS: 'rustc cargo'
+          CIBW_BUILD_FRONTEND: 'build'
+          CIBW_BEFORE_ALL: 'which python && python --version'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ios
+          path: ./dist
+
   build-windows:
     name: Build Windows wheels
     strategy:
