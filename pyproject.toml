@@ -10,7 +10,7 @@ authors = [
 ]
 description = "Python function to stream unzip all the files in a ZIP archive, without loading the entire ZIP file into memory or any of its uncompressed files"
 readme = "README.md"
-requires-python = ">=3.7.1"
+requires-python = ">=3.7.7"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
