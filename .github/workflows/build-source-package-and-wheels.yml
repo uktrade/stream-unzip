@@ -10,7 +10,7 @@ on:
 jobs:
   build-source:
     name: Build source package
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       pull-requests: write
@@ -22,7 +22,7 @@ jobs:
           GITHUB_REF_NAME=${{ inputs.github-ref-name }}
           sed -i "s/0\\.0\\.0\\.dev0/${GITHUB_REF_NAME/v/}/g" pyproject.toml
 
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v6
         with:
           python-version: 3.13
 
@@ -38,7 +38,7 @@ jobs:
 
   build-linux-non-arm7l:
     name: Build Linux wheels (all but arm7l)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       pull-requests: write
@@ -49,17 +49,31 @@ jobs:
           - "musllinux_1_1_x86_64"
           - "manylinux2014_aarch64"
           - "musllinux_1_1_aarch64"
-        folder:
-          - "cp37-cp37m"
-          - "cp38-cp38"
-          - "cp39-cp39"
-          - "cp310-cp310"
-          - "cp311-cp311"
-          - "cp312-cp312"
-          - "cp313-cp313"
+        python-version:
+          - "3.7"
+          - "3.8"
+          - "3.9"
+          - "3.10"
+          - "3.11"
+          - "3.12"
+          - "3.13"
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install uv and set the python version
+        uses: astral-sh/setup-uv@v6
+        with:
+          # The version of uv itself is pinned, which allows us to install older Python. Suspect
+          # that eventually to install newer Python, will need to have the version of uv specified
+          # in the matrix
+          version: "0.6.17"
+          python-version: ${{ matrix.python-version }}
+          activate-environment: true
+          ignore-nothing-to-cache: true
+
+      - name: UV Install Python 
+        run: uv python install
 
       - name: Update version in pyproject.toml from current git tag
         run: |
@@ -77,7 +91,7 @@ jobs:
             cd /app &&
             curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y &&
             . "$HOME/.cargo/env" &&
-            /opt/python/${{ matrix.folder }}/bin/python -m build --wheel
+            uv build --wheel
             auditwheel repair $(ls dist/*.whl) &&
             rm dist/*.whl &&
             cp wheelhouse/*.whl dist
@@ -85,14 +99,14 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: linux-${{ matrix.image }}-$${{ matrix.folder }}
+          name: linux-${{ matrix.image }}-$${{ matrix.python-version }}
           path: ./dist
 
   build-linux-arm7l:
     # Installing rust via rustup isn't supported on arm7l: it's a "Tier 2 target without host tools"
     # But we can install it using the distribution's system package manager, in this case apk
     name: Build Linux wheels (arm7l)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       pull-requests: write
@@ -100,17 +114,31 @@ jobs:
       matrix:
         image:
           - "musllinux_1_2_armv7l"
-        folder:
-          - "cp37-cp37m"
-          - "cp38-cp38"
-          - "cp39-cp39"
-          - "cp310-cp310"
-          - "cp311-cp311"
-          - "cp312-cp312"
-          - "cp313-cp313"
+        python-version:
+          - "3.7"
+          - "3.8"
+          - "3.9"
+          - "3.10"
+          - "3.11"
+          - "3.12"
+          - "3.13"
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install uv and set the python version
+        uses: astral-sh/setup-uv@v6
+        with:
+          # The version of uv itself is pinned, which allows us to install older Python. Suspect
+          # that eventually to install newer Python, will need to have the version of uv specified
+          # in the matrix
+          version: "0.6.17"
+          python-version: ${{ matrix.python-version }}
+          activate-environment: true
+          ignore-nothing-to-cache: true
+
+      - name: UV Install Python 
+        run: uv python install
 
       - name: Update version in pyproject.toml from current git tag
         run: |
@@ -127,7 +155,7 @@ jobs:
           docker run --rm -v ${{ github.workspace }}:/app quay.io/pypa/${{ matrix.image }} bash -c '
             cd /app &&
             apk add rust cargo &&
-            /opt/python/${{ matrix.folder }}/bin/python -m build --wheel &&
+            uv build --wheel &&
             auditwheel repair $(ls dist/*.whl) &&
             rm dist/*.whl &&
             cp wheelhouse/*.whl dist
@@ -135,7 +163,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: linux-${{ matrix.image }}-$${{ matrix.folder }}
+          name: linux-${{ matrix.image }}-$${{ matrix.python-version }}
           path: ./dist
 
   build-macos:
@@ -143,32 +171,37 @@ jobs:
     strategy:
       matrix:
         os:
-          - "macos-13"
           - "macos-14"  # ARM
           - "macos-15"  # ARM
         python-version:
-          - "3.7.7"
-          - "3.8.10"
-          - "3.9.13"
-          - "3.10.11"
-          - "3.11.9"
-          - "3.12.6"
-          - "3.13.0"
-        exclude:
-          - python-version: "3.7.7"
-            os: "macos-14"
-          - python-version: "3.7.7"
-            os: "macos-15"
+          - "3.8"
+          - "3.9"
+          - "3.10"
+          - "3.11"
+          - "3.12"
+          - "3.13"
     runs-on: '${{ matrix.os }}'
     permissions:
       contents: read
       pull-requests: write
 
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
+      - name: "Checkout"
+        uses: "actions/checkout@v4"
+
+      - name: Install uv and set the python version
+        uses: astral-sh/setup-uv@v6
         with:
-          python-version: '${{ matrix.python-version }}'
+          # The version of uv itself is pinned, which allows us to install older Python. Suspect
+          # that eventually to install newer Python, will need to have the version of uv specified
+          # in the matrix
+          version: "0.6.17"
+          python-version: ${{ matrix.python-version }}
+          activate-environment: true
+          ignore-nothing-to-cache: true
+          
+      - name: UV Install Python 
+        run: uv python install
 
       - name: Update version in pyproject.toml from current git tag
         run: |
@@ -177,8 +210,8 @@ jobs:
 
       - name: Build package
         run: |
-          pip install build
-          python -m build --wheel
+          uv pip install build
+          uv build --wheel
 
       - uses: actions/upload-artifact@v4
         with:
@@ -190,25 +223,37 @@ jobs:
     strategy:
       matrix:
         os:
-          - "windows-2019"
+          - "windows-2022"
         python-version:
-          - "3.7.1"
-          - "3.8.0"
-          - "3.9.0"
-          - "3.10.0"
-          - "3.11.0"
-          - "3.12.0"
-          - "3.13.0"
+          - "3.7"
+          - "3.8"
+          - "3.9"
+          - "3.10"
+          - "3.11"
+          - "3.12"
+          - "3.13"
     runs-on: '${{ matrix.os }}'
     permissions:
       contents: read
       pull-requests: write
 
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
+      - name: "Checkout"
+        uses: "actions/checkout@v4"
+
+      - name: Install uv and set the python version
+        uses: astral-sh/setup-uv@v6
         with:
-          python-version: '${{ matrix.python-version }}'
+          # The version of uv itself is pinned, which allows us to install older Python. Suspect
+          # that eventually to install newer Python, will need to have the version of uv specified
+          # in the matrix
+          version: "0.6.17"
+          python-version: ${{ matrix.python-version }}
+          activate-environment: true
+          ignore-nothing-to-cache: true
+
+      - name: UV Install Python 
+        run: uv python install
 
       - name: Update version in pyproject.toml from current git tag
         run: |
@@ -217,8 +262,8 @@ jobs:
 
       - name: Build package
         run: |
-          pip install build
-          python -m build --wheel
+          uv pip install build
+          uv build --wheel
 
       - uses: actions/upload-artifact@v4
         with:
