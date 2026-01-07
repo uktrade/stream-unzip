@@ -1,7 +1,7 @@
-const govukEleventyPlugin = require('@x-govuk/govuk-eleventy-plugin')
-const fs = require('fs')
+import { govukEleventyPlugin } from '@x-govuk/govuk-eleventy-plugin'
+import fs from 'fs';
 
-module.exports = function(eleventyConfig) {
+export default function(eleventyConfig) {
   // Register the plugin
   eleventyConfig.addPlugin(govukEleventyPlugin, {
     icons: {
@@ -26,7 +26,8 @@ module.exports = function(eleventyConfig) {
           }
         ]
       }
-    }
+    },
+    stylesheets: ['/assets/styles.css'],
   })
 
   eleventyConfig.addPassthroughCopy('./docs/assets')
@@ -39,7 +40,6 @@ module.exports = function(eleventyConfig) {
     dir: {
       // Use layouts from the plugin
       input: 'docs',
-      layouts: '../node_modules/@x-govuk/govuk-eleventy-plugin/layouts'
     }
   }
 };
