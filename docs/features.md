@@ -1,5 +1,6 @@
 ---
 layout: sub-navigation
+sectionKey: Features
 order: 2
 title: Features
 ---

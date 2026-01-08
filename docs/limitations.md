@@ -1,5 +1,9 @@
 ---
 layout: sub-navigation
+sectionKey: Features
+eleventyNavigation:
+    parent: Features
+caption: Features
 order: 3
 title: Limitations
 ---

@@ -1,6 +1,8 @@
 import { govukEleventyPlugin } from '@x-govuk/govuk-eleventy-plugin'
 import fs from 'fs';
 
+const serviceName = 'stream-unzip'
+
 export default function(eleventyConfig) {
   // Register the plugin
   eleventyConfig.addPlugin(govukEleventyPlugin, {
@@ -11,7 +13,26 @@ export default function(eleventyConfig) {
       logotype: {
         html: fs.readFileSync('./docs/assets/dit-logo.svg', {encoding: 'utf8'})
       },
-      productName: 'stream-unzip',
+      serviceName: 'stream-unzip,'
+    },
+    showBreadcrumbs: false,
+    serviceNavigation: {
+      serviceName,
+      serviceUrl: '/',
+      navigation: [
+        {
+          text: 'Get started',
+          href: '/get-started/'
+        },
+        {
+          text: 'Features',
+          href: '/features/'
+        },
+        {
+          text: 'Contributing',
+          href: '/contributing/'
+        }
+      ]
     },
     footer: {
       meta: {

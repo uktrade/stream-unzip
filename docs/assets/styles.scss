@@ -5,13 +5,6 @@ $_font-family: system-ui, sans-serif;
 
 @use "pkg:@x-govuk/govuk-eleventy-plugin";
 
-// Our logo is 5px taller than the GOV.UK Crown that the design system is tailored for, and the
-// design system by default adds a 2px bottom margin, so we set bottom margin to be -3px to make
-// the design work
-.govuk-template--rebranded .dbt-header__logotype {
-  margin-bottom: -3px;
-}
-// To make the product name align a bit better with the department name in the logo
-.govuk-template--rebranded .govuk-header__product-name {
-  margin-top: -1px;
+.govuk-header__logotype {
+  top: 0
 }

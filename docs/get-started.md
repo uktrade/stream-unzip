@@ -1,5 +1,6 @@
 ---
 layout: sub-navigation
+sectionKey: Get started
 order: 1
 title: Get started
 ---
