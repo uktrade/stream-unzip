@@ -1,7 +1,8 @@
 ---
 layout: sub-navigation
+sectionKey: Contributing
 order: 6
-title: How to contribute
+title: Contributing
 ---
 
 
