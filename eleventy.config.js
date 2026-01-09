@@ -15,6 +15,7 @@ export default function(eleventyConfig) {
       },
       serviceName: 'stream-unzip,'
     },
+    titleSuffix: serviceName,
     showBreadcrumbs: false,
     serviceNavigation: {
       serviceName,
