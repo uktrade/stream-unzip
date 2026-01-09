@@ -3,7 +3,7 @@ layout: sub-navigation
 sectionKey: API reference
 eleventyNavigation:
     parent: API reference
-order: 2
+order: 1
 caption: API reference
 title: Functions
 ---
