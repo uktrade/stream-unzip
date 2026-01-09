@@ -1,18 +1,16 @@
 ---
 layout: sub-navigation
-sectionKey: Get started
+sectionKey: API reference
 eleventyNavigation:
-    parent: Get started
+    parent: API reference
 order: 3
-caption: Get started
-title: Exceptions
+caption: API reference
+title: Exception hierarchy
 ---
 
 
-Exceptions raised by the source iterable are passed through `stream_unzip` unchanged. Other exceptions are in the `stream_unzip` module, and derive from its `UnzipError`.
+Exceptions raised by the source iterable are passed through the `stream_unzip.stream_unzip` and `stream_unzip.async_stream_unzip` functions unchanged. All explicitly-thrown exceptions derive from `stream_unzip.UnzipError`.
 
-
-## Exception hierarchy
 
   - **UnzipError**
 
