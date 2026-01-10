@@ -1,5 +1,5 @@
 $_font-family: system-ui, sans-serif;
-@use "pkg:govuk-frontend/dist/govuk" with (
+@use "pkg:govuk-frontend/dist/govuk" as * with (
   $govuk-font-family: $_font-family,
 );
 
@@ -7,4 +7,77 @@ $_font-family: system-ui, sans-serif;
 
 .govuk-header__logotype {
   top: 0
+}
+
+// Small headings are only with very short content, and is visually harder to group together if
+// there is margin between it and the content
+.govuk-heading-s {
+  margin-bottom: 0
+}
+
+// From https://github.com/x-govuk/govuk-eleventy-plugin/blob/4b13c204591a4afadf1af501612288e077e1ce5a/docs/assets/application.scss#L14-L77
+// The MIT License
+// Copyright (c) 2022 X-GOVUK
+// Copyright (c) 2019 Paul Robert Lloyd
+// Copyright (c) 2014 Crown Copyright (Government Digital Service)
+// Use responsive tables to show options
+.app-prose-scope .govuk-table {
+  @include govuk-media-query($until: "desktop") {
+    display: block;
+
+    .govuk-table__head {
+      @include govuk-visually-hidden;
+    }
+
+    .govuk-table__body {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .govuk-table__row {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: govuk-spacing(6);
+    }
+
+    .govuk-table__cell:first-child {
+      @include govuk-font(24);
+    }
+
+    .govuk-table__body .govuk-table__cell::before {
+      color: $govuk-secondary-text-colour;
+      display: block;
+      margin-bottom: govuk-spacing(1);
+      @include govuk-font(16);
+    }
+
+    .govuk-table__cell:nth-child(1)::before {
+      content: "Name";
+    }
+
+    .govuk-table__cell:nth-child(2)::before {
+      content: "Type";
+    }
+
+    .govuk-table__cell:nth-child(3)::before {
+      content: "Description";
+    }
+  }
+
+  @include govuk-media-query($from: "desktop") {
+    // stylelint-disable-next-line
+    display: table !important;
+
+    .govuk-table__header:nth-child(1) {
+      width: 30%;
+    }
+
+    .govuk-table__header:nth-child(2) {
+      width: 15%;
+    }
+  }
+
+  .govuk-table__cell:first-child {
+    font-weight: bold;
+  }
 }
