@@ -4,7 +4,7 @@ sectionKey: Get started
 eleventyNavigation:
     parent: Get started
 caption: Get started
-order: 3
+order: 2
 title: Limitations
 ---
 
