@@ -58,4 +58,4 @@ Allow member files encrypted with AES using a 192 bit encryption key. For this t
 
 ### stream_unzip.AES_256
 
-Allow member files with AES using a 256 bit encryption key. For this to function you must also pass at least one of `stream_unzip.AE_1` or `stream_unzip.AE_2`.
+Allow member files encrypted with AES using a 256 bit encryption key. For this to function you must also pass at least one of `stream_unzip.AE_1` or `stream_unzip.AE_2`.
