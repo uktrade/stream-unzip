@@ -15,8 +15,8 @@ stream-unzip exposes a single Python module: `stream_unzip`.
 
 The `stream_unzip` module exposes two functions:
 
-- [`stream_unzip.stream_unzip`](/api/functions/#stream-unzip)
-- [`stream_unzip.async_stream_unzip`](/api/functions/#async-stream-unzip)
+- [`stream_unzip.stream_unzip`](/api/functions/#stream-unzip-stream-unzip)
+- [`stream_unzip.async_stream_unzip`](/api/functions/#stream-unzip-async-stream-unzip)
 
 
 ## Encryption types
@@ -25,11 +25,11 @@ The `stream_unzip.stream_unzip` and `stream_unzip.async_stream_unzip` functions 
 
 - [`stream_unzip.NO_ENCRYPTION`](/api/encryption-types/#stream-unzip-no-encryption)
 - [`stream_unzip.ZIP_CRYPTO`](/api/encryption-types/#stream-unzip-zip-crypto)
-- [`stream_unzip.AE_1`](/api/encryption-types/#stream-unzip-ae_1)
-- [`stream_unzip.AE_2`](/api/encryption-types/#stream-unzip-ae_2)
-- [`stream_unzip.AES_128`](/api/encryption-types/#stream-unzip-aes_128)
-- [`stream_unzip.AES_192`](/api/encryption-types/#stream-unzip-aes_192)
-- [`stream_unzip.AES_256`](/api/encryption-types/#stream-unzip-aes_256)
+- [`stream_unzip.AE_1`](/api/encryption-types/#stream-unzip-ae-1)
+- [`stream_unzip.AE_2`](/api/encryption-types/#stream-unzip-ae-2)
+- [`stream_unzip.AES_128`](/api/encryption-types/#stream-unzip-aes-128)
+- [`stream_unzip.AES_192`](/api/encryption-types/#stream-unzip-aes-192)
+- [`stream_unzip.AES_256`](/api/encryption-types/#stream-unzip-aes-256)
 
 
 ## Exceptions
