@@ -13,7 +13,7 @@ To create ZIP files on the fly try [stream-zip](https://github.com/uktrade/strea
 
 In addition to being memory efficient, stream-unzip supports:
 
-- Deflate-compressed ZIPs. The is the historical standard for ZIP files.
+- Deflate-compressed ZIPs. This is the historical standard for ZIP files.
 
 - Deflate64-compressed ZIPs. These are created by certain versions of Windows Explorer in some circumstances. Python's zipfile module cannot open Deflate64-compressed ZIPs.
 
