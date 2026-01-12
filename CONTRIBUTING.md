@@ -22,13 +22,13 @@ To contribute changes to documentation or code, you will need the source of stre
 
 ### If you're a member of uktrade
 
-1. [Setup an SSH key and associate it with your GitHub account](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account)
+1. [Setup an SSH key and associate it with your GitHub account](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account).
 
-2. Clone the repository
+2. Clone the repository.
 
     ```bash
     git clone git@github.com:uktrade/stream-unzip.git
-    cd stream-zup
+    cd stream-unzip
     ```
 
 You should not fork the repository if you're a member of uktrade.
@@ -45,7 +45,7 @@ You should not fork the repository if you're a member of uktrade.
 
     ```bash
     git clone git@github.com:my-username/stream-unzip.git
-    cd stream-zup
+    cd stream-unzip
     ```
 
 ## Documentation
@@ -77,7 +77,7 @@ Changes are then submitted via a Pull Request (PR). To do this:
     ```bash
     git add docs/getting-started.md  # Repeat for each file changed
     git commit -m "docs: add an example"
-    gir push origin docs/add-example
+    git push origin docs/add-example
     ```
 
 6. Raise a PR at [https://github.com/uktrade/stream-unzip/pulls](https://github.com/uktrade/stream-unzip/pulls) against the `main` branch in stream-unzip.
@@ -108,17 +108,17 @@ Changes are then submitted via a Pull Request (PR). To do this:
 2. Make a branch using this descriptive name.
 
     ```bash
-    git checkout -b fix-a-bug-description
+    git checkout -b fix/the-bug-description
     ```
 
-3. Make sure you can run existing tests locally
+3. Make sure you can run existing tests locally.
 
     ```bash
     pip install -e ".[dev]"
     pytest
     ```
 
-4. Make your changes in a text editor. In the cases of changing behaviour, this would usually include changing or adding at least one test in [test_stream_zip.py](https://github.com/uktrade/stream-unzip/blob/main/test_stream_zip.py), and running them.
+4. Make your changes in a text editor. In the case of changing behaviour, this would usually include changing or adding at least one test in [test_stream_zip.py](https://github.com/uktrade/stream-unzip/blob/main/test_stream_zip.py), and running them.
 
     ```bash
     pytest
@@ -129,7 +129,7 @@ Changes are then submitted via a Pull Request (PR). To do this:
     ```bash
     git add stream_zip.py  # Repeat for each file changed
     git commit -m "feat: the bug description"
-    gir push origin fix/the-bug-description
+    git push origin fix/the-bug-description
     ```
 
 6. Raise a PR at [https://github.com/uktrade/stream-unzip/pulls](https://github.com/uktrade/stream-unzip/pulls) against the `main` branch in stream-unzip.

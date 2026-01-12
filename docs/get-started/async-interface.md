@@ -9,7 +9,7 @@ title: Async interface
 ---
 
 
-An async interface is provided via the function `async_stream_unzip`. Its usage is exactly the same as `stream_zip` except that:
+An async interface is provided via the function `async_stream_unzip`. Its usage is exactly the same as `stream_unzip` except that:
 
 1. The input must be an async iterable of bytes.
 2. The member files are output as an async iterable of tuples.

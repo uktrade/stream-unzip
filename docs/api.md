@@ -21,7 +21,7 @@ The `stream_unzip` module exposes two functions:
 
 ## Encryption types
 
-The `stream_unzip.stream_unzip` and `stream_unzip.async_stream_unzip` functions take a `allowed_encryption_mechanisms` argument that is a container of zero or more of the following constants:
+The `stream_unzip.stream_unzip` and `stream_unzip.async_stream_unzip` functions take an `allowed_encryption_mechanisms` argument, which is a container of zero or more of the following constants:
 
 - [`stream_unzip.NO_ENCRYPTION`](/api/encryption-types/#stream-unzip-no-encryption)
 - [`stream_unzip.ZIP_CRYPTO`](/api/encryption-types/#stream-unzip-zip-crypto)

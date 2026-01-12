@@ -42,7 +42,7 @@ Exceptions raised by the source iterable are passed through the `stream_unzip.st
 
             - **IncorrectPasswordError**
 
-                An incorrect password was supplied. Note that due to nature of the ZIP file format, some incorrect passwords would not raise this exception, and instead raise a `DataError`, or even in pathalogical cases, not raise any exception.
+                An incorrect password was supplied. Note that due to the nature of the ZIP file format, some incorrect passwords would not raise this exception, and instead raise a `DataError`, or even in pathological cases, not raise any exception.
 
                 - **IncorrectZipCryptoPasswordError**
 
@@ -62,7 +62,7 @@ Exceptions raised by the source iterable are passed through the `stream_unzip.st
 
                 - **ZipCryptoNotAllowed**
 
-                    The current member file is encrypted with the ZipCrypto mechanim, but ZIP_CRYPTO was not passed in the `allowed_encryption_mechanisms` to allow this.
+                    The current member file is encrypted with the ZipCrypto mechanism, but ZIP_CRYPTO was not passed in the `allowed_encryption_mechanisms` to allow this.
 
                 - **AE1NotAllowed**
 
@@ -99,11 +99,11 @@ Exceptions raised by the source iterable are passed through the `stream_unzip.st
 
                 - **UnsupportedZip64Error**
 
-                    A Zip64 member file has been encounted but support has been disabled.
+                    A Zip64 member file has been encountered but support has been disabled.
 
                 - **NotStreamUnzippable**
 
-                    A member file has been encounted that is not stream unzippable.
+                    A member file has been encountered that is not stream unzippable.
 
                     The only way to address this is to change how the member file is created. It must either be created compressed, or without using a "data descriptor", or if the file has a non-zero length its length must be given in the "local header" of the member file.
 
@@ -153,7 +153,7 @@ Exceptions raised by the source iterable are passed through the `stream_unzip.st
 
             - **TruncatedExtraError**
 
-                Metadata known as *extra* that some ZIP files require is present, but too short.
+                Metadata known as *extra* that some ZIP files require is present, but is too short.
 
                 - **TruncatedZip64ExtraError**
 
@@ -161,7 +161,7 @@ Exceptions raised by the source iterable are passed through the `stream_unzip.st
 
             - **InvalidExtraError**
 
-                Metadata known as *extra* that some ZIP files require is present, long enough, but holds an invalid value.
+                Metadata known as *extra* that some ZIP files require is present and long enough, but holds an invalid value.
 
                 - **InvalidAESKeyLengthError**
 

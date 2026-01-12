@@ -15,7 +15,7 @@ startButton:
   </section>
   <section class="govuk-grid-column-one-third-from-desktop govuk-!-margin-bottom-7">
     <h2 class="govuk-heading-m govuk-!-font-size-27">Encryption</h2>
-    <p class="govuk-body">Supports WinZIP-style AES-encryption, as well legacy ZipCrypto/Zip 2.0.</p>
+    <p class="govuk-body">Supports WinZIP-style AES-encryption, as well as legacy ZipCrypto/Zip 2.0.</p>
   </section>
   <section class="govuk-grid-column-one-third-from-desktop govuk-!-margin-bottom-7">
     <h2 class="govuk-heading-m govuk-!-font-size-27">Large files</h2>
@@ -28,6 +28,6 @@ startButton:
 <div class="govuk-grid-row">
   <section class="govuk-grid-column-two-thirds">
     <h2 class="govuk-heading-m govuk-!-font-size-27">Contributions</h2>
-    <p class="govuk-body">The code for stream-unzip is public and contributions are welcome though the <a class="govuk-link govuk-!-font-weight-bold" href="https://github.com/uktrade/stream-unzip">stream-unzip repository on GitHub</a>.</p>
+    <p class="govuk-body">The code for stream-unzip is public and contributions are welcome through the <a class="govuk-link govuk-!-font-weight-bold" href="https://github.com/uktrade/stream-unzip">stream-unzip repository on GitHub</a>.</p>
   </section>
 </div>

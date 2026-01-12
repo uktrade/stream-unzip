@@ -9,7 +9,7 @@ title: How to publish a release
 ---
 
 
-Only mambers of the uktrade GitHub organisation may publish a release. If you are a member of the uktrade GitHub organsation:
+Only members of the uktrade GitHub organisation may publish a release. If you are a member of the uktrade GitHub organsation:
 
 1. Go to the [stream-unzip GitHub releases page](https://github.com/uktrade/stream-unzip/releases).
 
