@@ -450,8 +450,9 @@ def stream_unzip(
         # header, which isn't usually the case if we have a data descriptor. However, some ZIP
         # archivers write the size in the local header even if a data descriptor is used, so if we
         # have a non-zero value, we _should_ be able to use it, and so only need to fail if we have
-        # a zero size.
-        if has_data_descriptor and compression == 0 and compressed_size == 0:
+        # a zero size. We also allow the case where both compressed and uncompressed sizes are zero,
+        # as this can indicate a legitimate 0-byte file.
+        if has_data_descriptor and compression == 0 and compressed_size == 0 and uncompressed_size != 0:
             raise NotStreamUnzippable(file_name)
 
         decompressor = \
