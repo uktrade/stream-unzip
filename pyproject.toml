@@ -31,7 +31,10 @@ dev = [
     "trio>=0.19.0",
 ]
 ci = [
-    "mypy==1.4.1",
+    # mypy 1.4.1 requires typed_ast, which cannot be installed on Python >= 3.14
+    "mypy==1.4.1;python_version<'3.14'",
+    # mypy 1.19.1 requires Python >= 2.9
+    "mypy==1.19.1;python_version>='3.14'",
     "pycryptodome==3.10.1",
     "stream-inflate==0.0.12",
 ]
