@@ -8,5 +8,5 @@ name = "_zipcrypto"
 crate-type = ["cdylib"]
 
 [dependencies]
-pyo3 = { version = "0.22.5", features = ["extension-module", "gil-refs"] }
+pyo3 = { version = "0.28.0", features = ["extension-module"] }
 crc32-v2 = "0.0.4"

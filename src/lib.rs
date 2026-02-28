@@ -74,7 +74,7 @@ impl StreamUnzipZipCryptoDecryptor {
     }
 
     // Decrypts a single chunk and returns the decrypted result
-    fn __call__<'py>(&mut self, py: Python<'py>, chunk: Vec<u8>) -> PyResult<&'py PyBytes> {
+    fn __call__<'py>(&mut self, py: Python<'py>, chunk: Vec<u8>) -> PyResult<Bound<'py, PyBytes>> {
         let result = self.zipcrypto.decrypt_chunk(&chunk);
         // Return the decrypted result as a Python bytes object so it can be used in Python code
         Ok(PyBytes::new(py, &result))
