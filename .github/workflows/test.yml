@@ -45,9 +45,6 @@ jobs:
       - name: "Install python dependencies"
         run: |
           uv pip install '.[dev,ci]'
-      - name: "Install python dependencies"
-        run: |
-          pip install ".[dev,ci]"
       - name: "Run type checking"
         run: |
           mypy python test.py --disable-error-code import
