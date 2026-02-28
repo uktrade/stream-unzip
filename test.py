@@ -837,7 +837,7 @@ class TestStreamUnzip(unittest.TestCase):
                     b += chunk
                 results.append((name, size, b))
 
-        asyncio.get_event_loop().run_until_complete(test())
+        asyncio.run(test())
         self.assertEqual(results, [
             (b'first.txt', 100000, b'-' * 100000),
             (b'second.txt', 100000, b'*' * 100000),
@@ -884,7 +884,7 @@ class TestStreamUnzip(unittest.TestCase):
             await async_stream_unzip(async_bytes()).__aiter__().__anext__()
 
         with self.assertRaisesRegex(Exception, 'From async bytes'):
-            asyncio.get_event_loop().run_until_complete(test())
+            asyncio.run(test())
 
     def test_async_does_stream(self):
         state = []
@@ -907,7 +907,7 @@ class TestStreamUnzip(unittest.TestCase):
                 async for chunk in chunks:
                     state.append('out')
 
-        asyncio.get_event_loop().run_until_complete(test())
+        asyncio.run(test())
         self.assertEqual(state, ['in', 'out', 'in', 'out', 'in', 'out', 'out', 'in', 'out', 'in'])
 
     @unittest.skipIf(
@@ -948,7 +948,7 @@ class TestStreamUnzip(unittest.TestCase):
                 async for chunk in chunks:
                     pass
 
-        asyncio.get_event_loop().run_until_complete(test())
+        asyncio.run(test())
         self.assertEqual(var.get(), 'set-from-outer')
         self.assertEqual(inner, 'set-from-outer')
         self.assertEqual(d.get()['key'], 'set-from-inner')
