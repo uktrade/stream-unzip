@@ -47,8 +47,8 @@ jobs:
           uv pip install '.[dev,ci]'
       - name: "Run type checking"
         run: |
-          mypy python test.py --disable-error-code import
+          uv run mypy python test.py --disable-error-code import
       - name: "Run tests"
         run: |
-          coverage run -m unittest -v
+          uv run coverage run -m unittest -v
       - uses: codecov/codecov-action@v3
