@@ -114,14 +114,14 @@ Changes are then submitted via a Pull Request (PR). To do this:
 3. Make sure you can run existing tests locally.
 
     ```bash
-    pip install -e ".[dev]"
+    uv pip install -e ".[dev]"
     pytest
     ```
 
-4. Make your changes in a text editor. In the case of changing behaviour, this would usually include changing or adding at least one test in [test_stream_zip.py](https://github.com/uktrade/stream-unzip/blob/main/test_stream_zip.py), and running them.
+4. Make your changes in a text editor. In the case of changing behaviour, this would usually include changing or adding at least one test in [test.py](https://github.com/uktrade/stream-unzip/blob/main/test.py), and running them.
 
     ```bash
-    pytest
+    pytest test.py
     ```
 
 5. Commit your changes and push to your fork. Ideally the commit message will follow the [Conventional Commit specification](https://www.conventionalcommits.org/).
