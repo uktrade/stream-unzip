@@ -50,34 +50,33 @@ jobs:
         image:
           - "manylinux2014_x86_64"
           - "musllinux_1_1_x86_64"
+          - "musllinux_1_2_x86_64"
           - "manylinux2014_aarch64"
           - "musllinux_1_1_aarch64"
-        python-version:
-          - "3.7"
-          - "3.8"
-          - "3.9"
-          - "3.10"
-          - "3.11"
-          - "3.12"
-          - "3.13"
-          - "3.14"
+          - "musllinux_1_2_aarch64"
+        folder:
+          - "cp37-cp37m"
+          - "cp38-cp38"
+          - "cp39-cp39"
+          - "cp310-cp310"
+          - "cp311-cp311"
+          - "cp312-cp312"
+          - "cp313-cp313"
+          - "cp314-cp314"
+        exclude:
+          - image: "musllinux_1_1_x86_64"
+            folder: "cp314-cp314"
+          - image: "musllinux_1_1_aarch64"
+            folder: "cp314-cp314"
+
+    env:
+      # 2024.10.26-1 supports 3.7 to 3.13 for musl 1.1 and is the last musl 1.1 version
+      # 2025.05.03-1 supports 3.7 to 3.13 for musl 1.2 and manylinux
+      # 2026.03.01-1 is the latest version at the time of writing
+      TAG: ${{ case(startsWith(matrix.image, 'musllinux_1_1_'), '2024.10.26-1', matrix.folder == 'cp314-cp314', '2026.03.01-1', '2025.05.03-1') }}
 
     steps:
       - uses: actions/checkout@v4
-
-      - name: Install uv and set the python version
-        uses: astral-sh/setup-uv@v6
-        with:
-          # The version of uv itself is pinned, which allows us to install older Python. Suspect
-          # that eventually to install newer Python, will need to have the version of uv specified
-          # in the matrix
-          version: ${{ format('{0}', matrix.python-version) == '3.7' && '0.6.17' || '0.10.6' }}
-          python-version: ${{ matrix.python-version }}
-          activate-environment: true
-          ignore-nothing-to-cache: true
-
-      - name: UV Install Python 
-        run: uv python install
 
       - name: Update version in pyproject.toml from current git tag
         run: |
@@ -91,11 +90,11 @@ jobs:
 
       - name: Build packages
         run: >-
-          docker run --rm -v ${{ github.workspace }}:/app quay.io/pypa/${{ matrix.image }} bash -c '
+          docker run --rm -v ${{ github.workspace }}:/app quay.io/pypa/${{ matrix.image }}:$TAG bash -c '
             cd /app &&
             curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y &&
             . "$HOME/.cargo/env" &&
-            uv build --wheel
+            uv build --python /opt/python/${{ matrix.folder }}/bin/python --wheel
             auditwheel repair $(ls dist/*.whl) &&
             rm dist/*.whl &&
             cp wheelhouse/*.whl dist
@@ -103,7 +102,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: linux-${{ matrix.image }}-$${{ matrix.python-version }}
+          name: linux-${{ matrix.image }}-$${{ matrix.folder }}
           path: ./dist
 
   build-linux-arm7l:
@@ -118,32 +117,23 @@ jobs:
       matrix:
         image:
           - "musllinux_1_2_armv7l"
-        python-version:
-          - "3.7"
-          - "3.8"
-          - "3.9"
-          - "3.10"
-          - "3.11"
-          - "3.12"
-          - "3.13"
-          - "3.14"
+        folder:
+          - "cp37-cp37m"
+          - "cp38-cp38"
+          - "cp39-cp39"
+          - "cp310-cp310"
+          - "cp311-cp311"
+          - "cp312-cp312"
+          - "cp313-cp313"
+          - "cp314-cp314"
+
+    env:
+      # 2025.05.03-1 supports 3.7 to 3.13
+      # 2026.03.01-1 is the latest version at the time of writing
+      TAG: ${{ case(matrix.folder == 'cp314-cp314', '2026.03.01-1', '2025.05.03-1') }}
 
     steps:
       - uses: actions/checkout@v4
-
-      - name: Install uv and set the python version
-        uses: astral-sh/setup-uv@v6
-        with:
-          # The version of uv itself is pinned, which allows us to install older Python. Suspect
-          # that eventually to install newer Python, will need to have the version of uv specified
-          # in the matrix
-          version: ${{ format('{0}', matrix.python-version) == '3.7' && '0.6.17' || '0.10.6' }}
-          python-version: ${{ matrix.python-version }}
-          activate-environment: true
-          ignore-nothing-to-cache: true
-
-      - name: UV Install Python 
-        run: uv python install
 
       - name: Update version in pyproject.toml from current git tag
         run: |
@@ -157,10 +147,10 @@ jobs:
 
       - name: Build packages
         run: >-
-          docker run --rm -v ${{ github.workspace }}:/app quay.io/pypa/${{ matrix.image }} bash -c '
+          docker run --rm -v ${{ github.workspace }}:/app quay.io/pypa/${{ matrix.image }}:$TAG bash -c '
             cd /app &&
             apk add rust cargo &&
-            uv build --wheel &&
+            uv build --python /opt/python/${{ matrix.folder }}/bin/python --wheel
             auditwheel repair $(ls dist/*.whl) &&
             rm dist/*.whl &&
             cp wheelhouse/*.whl dist
@@ -168,7 +158,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: linux-${{ matrix.image }}-$${{ matrix.python-version }}
+          name: linux-${{ matrix.image }}-$${{ matrix.folder }}
           path: ./dist
 
   build-macos:
