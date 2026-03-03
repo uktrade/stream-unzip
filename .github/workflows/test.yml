@@ -40,7 +40,7 @@ jobs:
         uses: astral-sh/setup-uv@v6
         with:
           # Pin to older uv version to get python 3.7.7
-          version: ${{ format('{0}', matrix.python-version) == '3.7.7' && '0.6.17' || '0.10.6' }}
+          version: '0.6.17'
           python-version: ${{ matrix.python-version }}
           activate-environment: true
       - name: "Install python dependencies"
@@ -48,8 +48,8 @@ jobs:
           uv pip install '.[dev,ci]'
       - name: "Run type checking"
         run: |
-          uv run mypy python test.py --disable-error-code import
+          mypy python test.py --disable-error-code import
       - name: "Run tests"
         run: |
-          uv run coverage run -m unittest -v
+          coverage run -m unittest -v
       - uses: codecov/codecov-action@v3

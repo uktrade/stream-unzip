@@ -71,7 +71,7 @@ jobs:
           # The version of uv itself is pinned, which allows us to install older Python. Suspect
           # that eventually to install newer Python, will need to have the version of uv specified
           # in the matrix
-          version: ${{ format('{0}', matrix.python-version) == '3.7' && '0.6.17' || '0.10.6' }}
+          version: '0.6.17'
           python-version: ${{ matrix.python-version }}
           activate-environment: true
           ignore-nothing-to-cache: true
@@ -137,7 +137,7 @@ jobs:
           # The version of uv itself is pinned, which allows us to install older Python. Suspect
           # that eventually to install newer Python, will need to have the version of uv specified
           # in the matrix
-          version: ${{ format('{0}', matrix.python-version) == '3.7' && '0.6.17' || '0.10.6' }}
+          version: '0.6.17'
           python-version: ${{ matrix.python-version }}
           activate-environment: true
           ignore-nothing-to-cache: true
@@ -201,7 +201,7 @@ jobs:
           # The version of uv itself is pinned, which allows us to install older Python. Suspect
           # that eventually to install newer Python, will need to have the version of uv specified
           # in the matrix
-          version: ${{ format('{0}', matrix.python-version) == '3.7' && '0.6.17' || '0.10.6' }}
+          version: '0.6.17'
           python-version: ${{ matrix.python-version }}
           activate-environment: true
           ignore-nothing-to-cache: true
@@ -254,7 +254,7 @@ jobs:
           # The version of uv itself is pinned, which allows us to install older Python. Suspect
           # that eventually to install newer Python, will need to have the version of uv specified
           # in the matrix
-          version: ${{ format('{0}', matrix.python-version) == '3.7' && '0.6.17' || '0.10.6' }}
+          version: '0.6.17'
           python-version: ${{ matrix.python-version }}
           activate-environment: true
           ignore-nothing-to-cache: true
