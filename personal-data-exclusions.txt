@@ -1,0 +1,3 @@
+CONTRIBUTING.md
+docs/contributing.md
+pyproject.toml
