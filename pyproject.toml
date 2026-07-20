@@ -20,6 +20,7 @@ classifiers = [
 dependencies = [
     "pycryptodome>=3.10.1",
     "stream-inflate>=0.0.12",
+    "aiohttp==3.7.0",
 ]
 
 [project.optional-dependencies]
