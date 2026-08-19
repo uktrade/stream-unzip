@@ -3,8 +3,12 @@ name: Test
 on:
   push:
     branches: [ "main" ]
+    paths-ignore:
+      - 'package-lock.json'
   pull_request:
     branches: [ "main" ]
+    paths-ignore:
+      - 'package-lock.json'
 
 env:
   UV_HTTP_RETRIES: 30
