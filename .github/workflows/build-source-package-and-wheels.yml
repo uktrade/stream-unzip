@@ -18,14 +18,14 @@ jobs:
       contents: read
       pull-requests: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7.0.1
 
       - name: Update version in pyproject.toml from current git tag
         run: |
           GITHUB_REF_NAME=${{ inputs.github-ref-name }}
           sed -i "s/0\\.0\\.0\\.dev0/${GITHUB_REF_NAME/v/}/g" pyproject.toml
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7.0.0
         with:
           python-version: 3.13
 
@@ -34,7 +34,7 @@ jobs:
           pip install build
           python -m build --sdist
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7.0.2
         with:
           name: source
           path: ./dist
@@ -76,7 +76,7 @@ jobs:
       TAG: ${{ case(startsWith(matrix.image, 'musllinux_1_1_'), '2024.10.26-1', matrix.folder == 'cp314-cp314', '2026.03.01-1', '2025.05.03-1') }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7.0.1
 
       - name: Update version in pyproject.toml from current git tag
         run: |
@@ -84,7 +84,7 @@ jobs:
           sed -i "s/0\\.0\\.0\\.dev0/${GITHUB_REF_NAME/v/}/g" pyproject.toml
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4.4.0
         with:
           platforms: arm64
 
@@ -100,7 +100,7 @@ jobs:
             cp wheelhouse/*.whl dist
           '
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7.0.2
         with:
           name: linux-${{ matrix.image }}-$${{ matrix.folder }}
           path: ./dist
@@ -133,7 +133,7 @@ jobs:
       TAG: ${{ case(matrix.folder == 'cp314-cp314', '2026.03.01-1', '2025.05.03-1') }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7.0.1
 
       - name: Update version in pyproject.toml from current git tag
         run: |
@@ -141,7 +141,7 @@ jobs:
           sed -i "s/0\\.0\\.0\\.dev0/${GITHUB_REF_NAME/v/}/g" pyproject.toml
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4.4.0
         with:
           platforms: arm
 
@@ -156,7 +156,7 @@ jobs:
             cp wheelhouse/*.whl dist
           '
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7.0.2
         with:
           name: linux-${{ matrix.image }}-$${{ matrix.folder }}
           path: ./dist
@@ -183,10 +183,10 @@ jobs:
 
     steps:
       - name: "Checkout"
-        uses: "actions/checkout@v4"
+        uses: "actions/checkout@v7.0.1"
 
       - name: Install uv and set the python version
-        uses: astral-sh/setup-uv@v6
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           # The version of uv itself is pinned, which allows us to install older Python. Suspect
           # that eventually to install newer Python, will need to have the version of uv specified
@@ -209,7 +209,7 @@ jobs:
           uv pip install build
           uv build --wheel
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7.0.2
         with:
           name: ${{ matrix.os }}-${{ matrix.python-version }}
           path: ./dist
@@ -236,10 +236,10 @@ jobs:
 
     steps:
       - name: "Checkout"
-        uses: "actions/checkout@v4"
+        uses: "actions/checkout@v7.0.1"
 
       - name: Install uv and set the python version
-        uses: astral-sh/setup-uv@v6
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           # The version of uv itself is pinned, which allows us to install older Python. Suspect
           # that eventually to install newer Python, will need to have the version of uv specified
@@ -262,7 +262,7 @@ jobs:
           uv pip install build
           uv build --wheel
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7.0.2
         with:
           name: ${{ matrix.os }}-${{ matrix.python-version }}
           path: ./dist
