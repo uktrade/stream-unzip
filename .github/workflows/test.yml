@@ -26,6 +26,7 @@ jobs:
         # If changing how many times tests are run, must also change in codecov.yml
         # to ensure test coverage is reported only after all tests have finished
         python-version:
+          - "3.8.2"
           - "3.10.0"
           - "3.11.1"
           - "3.12.0"
