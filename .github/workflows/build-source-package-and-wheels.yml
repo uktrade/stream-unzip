@@ -18,7 +18,7 @@ jobs:
       contents: read
       pull-requests: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Update version in pyproject.toml from current git tag
         run: |
@@ -74,7 +74,7 @@ jobs:
       TAG: ${{ case(startsWith(matrix.image, 'musllinux_1_1_'), '2024.10.26-1', '2026.03.01-1') }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Update version in pyproject.toml from current git tag
         run: |
@@ -129,7 +129,7 @@ jobs:
       TAG: 2026.03.01-1
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Update version in pyproject.toml from current git tag
         run: |
@@ -179,15 +179,15 @@ jobs:
 
     steps:
       - name: "Checkout"
-        uses: "actions/checkout@v4"
+        uses: "actions/checkout@v7"
 
       - name: Install uv and set the python version
-        uses: astral-sh/setup-uv@v6
+        uses: astral-sh/setup-uv@v10
         with:
           # The version of uv itself is pinned, which allows us to install older Python. Suspect
           # that eventually to install newer Python, will need to have the version of uv specified
           # in the matrix
-          version: "0.10.6"
+          version: "0.13.0"
           python-version: ${{ matrix.python-version }}
           activate-environment: true
           ignore-nothing-to-cache: true
@@ -231,15 +231,15 @@ jobs:
 
     steps:
       - name: "Checkout"
-        uses: "actions/checkout@v4"
+        uses: "actions/checkout@v7"
 
       - name: Install uv and set the python version
-        uses: astral-sh/setup-uv@v6
+        uses: astral-sh/setup-uv@v10
         with:
           # The version of uv itself is pinned, which allows us to install older Python. Suspect
           # that eventually to install newer Python, will need to have the version of uv specified
           # in the matrix
-          version: "0.10.6"
+          version: "0.13.0"
           python-version: ${{ matrix.python-version }}
           activate-environment: true
           ignore-nothing-to-cache: true
