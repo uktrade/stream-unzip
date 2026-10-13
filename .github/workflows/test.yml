@@ -26,7 +26,6 @@ jobs:
         # If changing how many times tests are run, must also change in codecov.yml
         # to ensure test coverage is reported only after all tests have finished
         python-version:
-          - "3.7.7"
           - "3.8.2"
           - "3.10.0"
           - "3.11.1"
@@ -39,12 +38,12 @@ jobs:
       pull-requests: write
     steps:
       - name: "Checkout"
-        uses: "actions/checkout@v3"
+        uses: "actions/checkout@v7"
       - name: Install uv and set the python version
-        uses: astral-sh/setup-uv@v6
+        uses: astral-sh/setup-uv@v10.0.0
         with:
-          # Pin to older uv version to get python 3.7.7
-          version: ${{ format('{0}', matrix.python-version) == '3.7.7' && '0.6.17' || '0.10.6' }}
+          # Pin uv version to get python 3.8
+          version: "0.13.0"
           python-version: ${{ matrix.python-version }}
           activate-environment: true
       - name: "Install python dependencies"

@@ -31,6 +31,19 @@ To contribute changes to documentation or code, you will need the source of stre
     cd stream-unzip
     ```
 
+3. Create an environment and install the dependencies
+
+    ```bash
+    uv venv
+    uv sync
+    ```
+
+4. Install pre-commit
+
+    ```bash
+    uvx pre-commit install --install-hooks --overwrite -t commit-msg -t pre-commit
+    ```
+
 You should not fork the repository if you're a member of uktrade.
 
 ### If you're not a member of uktrade

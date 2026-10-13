@@ -18,7 +18,7 @@ jobs:
       contents: read
       pull-requests: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Update version in pyproject.toml from current git tag
         run: |
@@ -55,7 +55,6 @@ jobs:
           - "musllinux_1_1_aarch64"
           - "musllinux_1_2_aarch64"
         folder:
-          - "cp37-cp37m"
           - "cp38-cp38"
           - "cp39-cp39"
           - "cp310-cp310"
@@ -70,13 +69,12 @@ jobs:
             folder: "cp314-cp314"
 
     env:
-      # 2024.10.26-1 supports 3.7 to 3.13 for musl 1.1 and is the last musl 1.1 version
-      # 2025.05.03-1 supports 3.7 to 3.13 for musl 1.2 and manylinux
-      # 2026.03.01-1 is the latest version at the time of writing
-      TAG: ${{ case(startsWith(matrix.image, 'musllinux_1_1_'), '2024.10.26-1', matrix.folder == 'cp314-cp314', '2026.03.01-1', '2025.05.03-1') }}
+      # 2024.10.26-1 is the last musllinux_1_1 image (3.7 to 3.13, no 3.14)
+      # 2026.03.01-1 covers everything else
+      TAG: ${{ case(startsWith(matrix.image, 'musllinux_1_1_'), '2024.10.26-1', '2026.03.01-1') }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Update version in pyproject.toml from current git tag
         run: |
@@ -118,7 +116,6 @@ jobs:
         image:
           - "musllinux_1_2_armv7l"
         folder:
-          - "cp37-cp37m"
           - "cp38-cp38"
           - "cp39-cp39"
           - "cp310-cp310"
@@ -128,12 +125,11 @@ jobs:
           - "cp314-cp314"
 
     env:
-      # 2025.05.03-1 supports 3.7 to 3.13
-      # 2026.03.01-1 is the latest version at the time of writing
-      TAG: ${{ case(matrix.folder == 'cp314-cp314', '2026.03.01-1', '2025.05.03-1') }}
+      # 2026.03.01-1 covers 3.10 to 3.14
+      TAG: 2026.03.01-1
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Update version in pyproject.toml from current git tag
         run: |
@@ -183,15 +179,15 @@ jobs:
 
     steps:
       - name: "Checkout"
-        uses: "actions/checkout@v4"
+        uses: "actions/checkout@v7"
 
       - name: Install uv and set the python version
-        uses: astral-sh/setup-uv@v6
+        uses: astral-sh/setup-uv@v10.0.0
         with:
           # The version of uv itself is pinned, which allows us to install older Python. Suspect
           # that eventually to install newer Python, will need to have the version of uv specified
           # in the matrix
-          version: ${{ format('{0}', matrix.python-version) == '3.7' && '0.6.17' || '0.10.6' }}
+          version: "0.13.0"
           python-version: ${{ matrix.python-version }}
           activate-environment: true
           ignore-nothing-to-cache: true
@@ -221,7 +217,6 @@ jobs:
         os:
           - "windows-2022"
         python-version:
-          - "3.7"
           - "3.8"
           - "3.9"
           - "3.10"
@@ -236,15 +231,15 @@ jobs:
 
     steps:
       - name: "Checkout"
-        uses: "actions/checkout@v4"
+        uses: "actions/checkout@v7"
 
       - name: Install uv and set the python version
-        uses: astral-sh/setup-uv@v6
+        uses: astral-sh/setup-uv@v10.0.0
         with:
           # The version of uv itself is pinned, which allows us to install older Python. Suspect
           # that eventually to install newer Python, will need to have the version of uv specified
           # in the matrix
-          version: ${{ format('{0}', matrix.python-version) == '3.7' && '0.6.17' || '0.10.6' }}
+          version: "0.13.0"
           python-version: ${{ matrix.python-version }}
           activate-environment: true
           ignore-nothing-to-cache: true
