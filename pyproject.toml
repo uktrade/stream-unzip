@@ -26,7 +26,6 @@ dependencies = [
 dev = [
     "coverage>=6.2",
     "mypy>=1.4.1",
-    "pre-commit>=4.3.0",
     "pytest>=6.2.5",
     "pytest-cov>=3.0.0",
     "trio>=0.19.0",

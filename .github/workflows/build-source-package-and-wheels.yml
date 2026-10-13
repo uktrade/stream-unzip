@@ -55,6 +55,8 @@ jobs:
           - "musllinux_1_1_aarch64"
           - "musllinux_1_2_aarch64"
         folder:
+          - "cp38-cp38"
+          - "cp39-cp39"
           - "cp310-cp310"
           - "cp311-cp311"
           - "cp312-cp312"
@@ -114,6 +116,8 @@ jobs:
         image:
           - "musllinux_1_2_armv7l"
         folder:
+          - "cp38-cp38"
+          - "cp39-cp39"
           - "cp310-cp310"
           - "cp311-cp311"
           - "cp312-cp312"
@@ -161,6 +165,8 @@ jobs:
           - "macos-14"  # ARM
           - "macos-15"  # ARM
         python-version:
+          - "3.8"
+          - "3.9"
           - "3.10"
           - "3.11"
           - "3.12"
@@ -211,6 +217,8 @@ jobs:
         os:
           - "windows-2022"
         python-version:
+          - "3.8"
+          - "3.9"
           - "3.10"
           - "3.11"
           - "3.12"

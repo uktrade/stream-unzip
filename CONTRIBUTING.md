@@ -35,13 +35,13 @@ To contribute changes to documentation or code, you will need the source of stre
 
     ```bash
     uv venv
-    uv sync --all-extras
+    uv sync
     ```
 
 4. Install pre-commit
 
     ```bash
-    uv run pre-commit install --install-hooks --overwrite -t commit-msg -t pre-commitbash
+    uvx pre-commit install --install-hooks --overwrite -t commit-msg -t pre-commitbash
     ```
 
 You should not fork the repository if you're a member of uktrade.
