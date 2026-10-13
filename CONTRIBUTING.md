@@ -41,7 +41,7 @@ To contribute changes to documentation or code, you will need the source of stre
 4. Install pre-commit
 
     ```bash
-    uvx pre-commit install --install-hooks --overwrite -t commit-msg -t pre-commitbash
+    uvx pre-commit install --install-hooks --overwrite -t commit-msg -t pre-commit
     ```
 
 You should not fork the repository if you're a member of uktrade.
