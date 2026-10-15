@@ -39,7 +39,7 @@ def stream_unzip(
 | --------------------------------------- | --------------- | -------------------------------------
 | zipfile_chunks                          | Iterable[bytes] | The raw bytes of the ZIP
 | password                                | Optional[bytes] | The password for all member files of the ZIP
-| chunk_size                              | int             | How many bytes to fetch from `zipfile_chunks` before attempting to process them
+| chunk_size                              | int             | Must be a positive integer. It sets how many bytes to fetch from `zipfile_chunks` before attempting to process them.
 | allow_zip64                             | bool            | Whether to allow ZIP64 member files.
 | allowed_<wbr>encryption_<wbr>mechanisms | Container       | The allowed encryption mechanisms of the ZIP. If a member file with an encryption type is encountered an exception is thrown. See [Encryption types](/api/encryption-types/) for more details.
 
@@ -92,7 +92,7 @@ async def async_stream_unzip(
 | --------------------------------------- | -------------------- | -------------------------------------
 | chunks                                  | AsyncIterable[bytes] | The raw bytes of the ZIP
 | password                                | Optional[bytes]      | The password for all member files of the ZIP
-| chunk_size                              | int                  | How many bytes to fetch from `zipfile_chunks` before attempting to process them
+| chunk_size                              | int                  | Must be a positive integer. It sets how many bytes to fetch from `chunks` before attempting to process them.
 | allow_zip64                             | bool                 | Whether to allow ZIP64 member files.
 | allowed_<wbr>encryption_<wbr>mechanisms | Container            | The allowed encryption mechanisms of the ZIP. If a member file with an encryption type is encountered an exception is thrown. See [Encryption types](/api/encryption-types/) for more details.
 

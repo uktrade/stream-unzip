@@ -43,6 +43,16 @@ from stream_unzip import (
 
 class TestStreamUnzip(unittest.TestCase):
 
+    def test_chunk_size_must_be_positive(self):
+        zip_file = io.BytesIO()
+        with zipfile.ZipFile(zip_file, 'w', zipfile.ZIP_STORED) as archive:
+            archive.writestr('one-byte.txt', b'x')
+
+        for chunk_size in (0, -1):
+            with self.subTest(chunk_size=chunk_size):
+                with self.assertRaisesRegex(ValueError, 'chunk_size'):
+                    next(stream_unzip([zip_file.getvalue()], chunk_size=chunk_size))
+
     def test_methods_and_chunk_sizes(self):
         rnd = random.Random()
         rnd.seed(1)
