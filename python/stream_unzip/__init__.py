@@ -36,6 +36,9 @@ def stream_unzip(
     allow_zip64: bool=True,
     allowed_encryption_mechanisms: Container[_Encryption]=_ALL_ENCRYPTIONS,
 ) -> Generator[Tuple[bytes, int, Generator[bytes, Any, None]], Any, None]:
+    if chunk_size <= 0:
+        raise ValueError('chunk_size must be greater than zero')
+
     local_file_header_signature = b'PK\x03\x04'
     local_file_header_struct = Struct('<H2sHHHIIIHH')
     zip64_compressed_size = 0xFFFFFFFF
