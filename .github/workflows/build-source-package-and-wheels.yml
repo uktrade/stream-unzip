@@ -25,7 +25,7 @@ jobs:
           GITHUB_REF_NAME=${{ inputs.github-ref-name }}
           sed -i "s/0\\.0\\.0\\.dev0/${GITHUB_REF_NAME/v/}/g" pyproject.toml
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: 3.13
 
@@ -34,7 +34,7 @@ jobs:
           pip install build
           python -m build --sdist
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: source
           path: ./dist
@@ -98,7 +98,7 @@ jobs:
             cp wheelhouse/*.whl dist
           '
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: linux-${{ matrix.image }}-$${{ matrix.folder }}
           path: ./dist
@@ -152,7 +152,7 @@ jobs:
             cp wheelhouse/*.whl dist
           '
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: linux-${{ matrix.image }}-$${{ matrix.folder }}
           path: ./dist
@@ -182,7 +182,7 @@ jobs:
         uses: "actions/checkout@v7"
 
       - name: Install uv and set the python version
-        uses: astral-sh/setup-uv@v10.0.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           # The version of uv itself is pinned, which allows us to install older Python. Suspect
           # that eventually to install newer Python, will need to have the version of uv specified
@@ -205,7 +205,7 @@ jobs:
           uv pip install build
           uv build --wheel
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.os }}-${{ matrix.python-version }}
           path: ./dist
@@ -234,7 +234,7 @@ jobs:
         uses: "actions/checkout@v7"
 
       - name: Install uv and set the python version
-        uses: astral-sh/setup-uv@v10.0.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           # The version of uv itself is pinned, which allows us to install older Python. Suspect
           # that eventually to install newer Python, will need to have the version of uv specified
@@ -257,7 +257,7 @@ jobs:
           uv pip install build
           uv build --wheel
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.os }}-${{ matrix.python-version }}
           path: ./dist
