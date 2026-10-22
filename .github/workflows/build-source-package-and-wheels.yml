@@ -34,7 +34,7 @@ jobs:
           pip install build
           python -m build --sdist
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: source
           path: ./dist
@@ -98,7 +98,7 @@ jobs:
             cp wheelhouse/*.whl dist
           '
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: linux-${{ matrix.image }}-$${{ matrix.folder }}
           path: ./dist
@@ -152,7 +152,7 @@ jobs:
             cp wheelhouse/*.whl dist
           '
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: linux-${{ matrix.image }}-$${{ matrix.folder }}
           path: ./dist
@@ -205,7 +205,7 @@ jobs:
           uv pip install build
           uv build --wheel
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.os }}-${{ matrix.python-version }}
           path: ./dist
@@ -257,7 +257,7 @@ jobs:
           uv pip install build
           uv build --wheel
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.os }}-${{ matrix.python-version }}
           path: ./dist
