@@ -40,7 +40,7 @@ jobs:
       - name: "Checkout"
         uses: "actions/checkout@v7"
       - name: Install uv and set the python version
-        uses: astral-sh/setup-uv@v10.0.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           # Pin uv version to get python 3.8
           version: "0.13.0"
@@ -55,4 +55,4 @@ jobs:
       - name: "Run tests"
         run: |
           uv run coverage run -m unittest -v
-      - uses: codecov/codecov-action@v3
+      - uses: codecov/codecov-action@v7
