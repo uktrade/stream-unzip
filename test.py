@@ -1,7 +1,7 @@
 import asyncio
 import itertools
 import io
-import platform
+import sys
 import unittest
 import uuid
 import random
@@ -843,8 +843,9 @@ class TestStreamUnzip(unittest.TestCase):
             (b'second.txt', 100000, b'*' * 100000),
         ])
 
+    # sys.version_info stays numeric for prerelease versions such as Python 3.15.0rc2.
     @unittest.skipIf(
-        tuple(int(v) for v in platform.python_version().split('.')) == (3,7,1),
+        sys.version_info[:3] == (3,7,1),
         "trio appears not compatible with Python 3.7.1",
     )
     def test_async_stream_unzip_with_trio(self):
@@ -911,7 +912,7 @@ class TestStreamUnzip(unittest.TestCase):
         self.assertEqual(state, ['in', 'out', 'in', 'out', 'in', 'out', 'out', 'in', 'out', 'in'])
 
     @unittest.skipIf(
-        tuple(int(v) for v in platform.python_version().split('.')) < (3,7,0),
+        sys.version_info[:3] < (3,7,0),
         "contextvars are not supported before Python 3.7.0",
     )
     def test_copy_of_context_variable_available_in_iterable(self):
